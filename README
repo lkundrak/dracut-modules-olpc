@@ -1,0 +1,9 @@
+A collection of dracut modules for implementing OLPC's initramfs features.
+
+GPL-2 licensed.
+
+Hopefully a candidate to be included upstream in dracut in future.
+
+- Daniel Drake <dsd@laptop.org>
+  based on a lot of code written by C. Scott Ananian and others
+
