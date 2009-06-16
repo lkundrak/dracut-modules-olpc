@@ -11,6 +11,7 @@ dracut_install poweroff
 
 dracut_install python
 dracut_install python2.6
+inst "$moddir"/activate.py /usr/libexec/initramfs-olpc/activate.py
 inst "$moddir"/upfs.py /usr/libexec/initramfs-olpc/upfs.py
 inst "$moddir"/cprl.so /usr/lib/python2.6/lib-dynload/cprl.so
 

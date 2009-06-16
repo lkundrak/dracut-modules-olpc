@@ -79,6 +79,14 @@ frob_symlink() {
 # check private security dir
 check_stolen
 
+# if we're activating, we just received a lease that we should write to disk
+# sooner rather than later
+if [ -n "$olpc_write_lease" ]; then
+	# FIXME need writable root
+	mkdir -p $NEWROOT/security || die
+	echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
+fi
+
 # launch pretty boot just as soon as possible
 # FIXME: how will this fit into everything?
 # start_boot_animation('/sysroot')

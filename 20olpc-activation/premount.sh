@@ -65,9 +65,17 @@ if [ "$do_activate" == "1" ]; then
 	# def lease writer()
 	# def run_init()
 	# antitheft.run(!do_activate, sn, uuid, 'schooserver.laptop.org', lease_writer, run_init)
-	do_activate $sn $uuid 'schoolserver.laptop.org' || die
-fi
+	olpc_write_lease=$(/usr/libexec/initramfs-olpc/activate.py $sn $uuid)
+	# FIXME err check
 
-# unfreeze DCON
-# become interactive shell
+	if [ -z "$olpc_write_lease" ]; then
+		#  This message is never seen unless the GUI failed.
+		echo "Could not activate this XO."
+		echo "Serial number: $sn" # don't show UUID
+		# activation failed.  shutdown in 2 minutes.
+		sync || die
+		sleep 60
+		poweroff || die
+	fi
+fi
 

@@ -123,14 +123,14 @@ class Tree(object):
         
 
 def main():
-	if len(sys.argv) != 4:
-		print "Usage: %s SYSROOT NAME MODE" % sys.argv[0]
-		sys.exit(1)
-	Tree(sys.argv[2], mode=sys.argv[3]).install(sys.argv[1])
-	sys.exit(0)
+    if len(sys.argv) != 4:
+        print "Usage: %s SYSROOT NAME MODE" % sys.argv[0]
+        sys.exit(1)
+    Tree(sys.argv[2], mode=sys.argv[3]).install(sys.argv[1])
+    sys.exit(0)
 
 if __name__ == "__main__":
-	main()
+    main()
 
 # os.umask(0755)
 
