@@ -1,9 +1,16 @@
 #!/bin/bash
 inst_hook pre-mount 10 "$moddir"/premount.sh
 inst_hook pre-pivot 10 "$moddir"/prepivot.sh
+
 dracut_install dd
 dracut_install rm
 dracut_install mv
 dracut_install ln
 dracut_install sync
 dracut_install poweroff
+
+dracut_install python
+dracut_install python2.6
+inst "$moddir"/upfs.py /usr/libexec/initramfs-olpc/upfs.py
+inst "$moddir"/cprl.so /usr/lib/python2.6/lib-dynload/cprl.so
+

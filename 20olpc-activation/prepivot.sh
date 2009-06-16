@@ -62,10 +62,7 @@ frob_symlink() {
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
-		# FIXME call into python as follows
-		# import upfs # upgrade fs helper code
-		# tree = upfs.Tree(current, mode='thawed') # frozen?
-		# tree.install('/sysroot')
+		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed || die
 	fi
 
 	# create 'running' symlink
