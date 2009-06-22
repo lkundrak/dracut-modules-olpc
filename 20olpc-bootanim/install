@@ -1,0 +1,4 @@
+#!/bin/bash
+dracut_install umount touch
+inst_hook pre-pivot 2 "$moddir"/startanim.sh
+
