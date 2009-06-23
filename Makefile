@@ -2,7 +2,7 @@ PACKAGE=dracut-modules-olpc
 MOCK=./mock-wrapper -r fedora-11-i386 --resultdir=$(MOCKDIR)
 MOCKDIR=./rpms
 VERSION=0.1
-VERSION_RELEASE=1
+VERSION_RELEASE=2
 PKGVER=$(PACKAGE)-$(VERSION)
 CWD=$(shell pwd)
 

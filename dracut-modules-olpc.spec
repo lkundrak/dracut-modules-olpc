@@ -1,6 +1,6 @@
 Name:		dracut-modules-olpc
 Version:	0.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	OLPC modules for dracut initramfs
 
 Group:		System Environment/Base
@@ -10,7 +10,7 @@ Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:	dracut
-Requires:		dracut
+Requires:		dracut, olpc-bootanim
 
 %description
 OLPC-specific modules for dracut
@@ -39,6 +39,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Jun 23 2009 Daniel Drake <dsd@laptop.org> - 0.1-2
+- Add dependency on olpc-bootanim
+
 * Tue Jun 23 2009 Daniel Drake <dsd@laptop.org> - 0.1-1
 - Initial release, includes olpc-bootanim module
 
