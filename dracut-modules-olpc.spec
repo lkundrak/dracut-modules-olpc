@@ -39,6 +39,6 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Jun 22 2009 Daniel Drake <dsd@laptop.org> - 0.1-1
+* Tue Jun 23 2009 Daniel Drake <dsd@laptop.org> - 0.1-1
 - Initial release, includes olpc-bootanim module
 
