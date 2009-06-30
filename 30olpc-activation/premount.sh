@@ -12,20 +12,31 @@ exists_ofw()
 
 read_ofw()
 {
-	# FIXME: trim off \n\0 if it exists
-	echo $(</ofw/$1)
+    # Trim off the \n\0 on OFW mfg data device tree nodes.  According to
+    # OLPC trac #2085, this is a bug that will eventually be fixed -- but
+    # it doesn't hurt to try to strip them off in any case
+	# Note that bash strips the \0 so we just have to remove any trailing \n
+	local contents=$(</ofw/$1)
+	echo ${contents%\\n}
 }
 
-#FIXME die ok?
+die() {
+	if [ "$#" != "0" ]; then
+		echo $*
+	else
+		echo "Failure condition in initramfs"
+	fi
+	exit 1
+}
 
 xo=1
 
 getarg activate && do_activate=1
 getarg altboot && olpc_boot_backup=1
-# int arg
 getarg emu && xo=0
 
 if [ "$xo" == "1" ]; then
+	mkdir -p /ofw
 	mount -t promfs promfs /ofw || die
 	arch=$(read_ofw architecture)
 	sn=$(read_ofw mfg-data/SN)
@@ -38,7 +49,7 @@ if [ "$xo" == "1" ]; then
 fi
 
 # Might not be an XO (could be an emulator)
-if [ -z "$sn" -o -z "$uuid" ] && [ "$arch" != "OLPC" ] && xo=0
+[ -z "$sn" -o -z "$uuid" ] && [ "$arch" != "OLPC" ] && xo=0
 
 sn=${sn:-SHF00000000}
 uuid=${uuid:-00000000-0000-0000-0000-000000000000}
@@ -47,7 +58,7 @@ uuid=${uuid:-00000000-0000-0000-0000-000000000000}
 echo "$sn/$uuid" > /dev/urandom || die
 
 # use the hardware RNG to generate some more (trac #7213)
-[ -e /dev/hwrng ] && dd if=/dev/hwrng of=/dev/urandom bs=1k count=1
+[ -e /dev/hwrng ] && dd if=/dev/hwrng of=/dev/urandom bs=1k count=1 >/dev/null 2>&1
 
 # are we booting from an alternate image?
 [ -n "$bootpath" -a -z "${bootpath%%*\\boot-alt\\*}" ] && olpc_boot_backup=1
@@ -58,17 +69,12 @@ echo "$sn/$uuid" > /dev/urandom || die
 # be actos.  But some firmwares inadvertently pass the ramdisk name instead
 # (actrd).
 # look for \actos.zip and \actrd.zip in the bootpath
-[ -n "$bootpath" ] && [[ -z "${bootpath%%*\\actos.zip*}" -o -z "${bootpath%%*\\actrd.zip*}" ]] && do_activate=1
+[ -n "$bootpath" ] && [[ -z "${bootpath%%*\\actos.zip*}" || -z "${bootpath%%*\\actrd.zip*}" ]] && do_activate=1
 [ "$xo" == "0" -o "$ak" == "1" ] && do_activate=0
 
 if [ "$do_activate" == "1" ]; then
-	# def lease writer()
-	# def run_init()
-	# antitheft.run(!do_activate, sn, uuid, 'schooserver.laptop.org', lease_writer, run_init)
 	olpc_write_lease=$(/usr/libexec/initramfs-olpc/activate.py $sn $uuid)
-	# FIXME err check
-
-	if [ -z "$olpc_write_lease" ]; then
+	if [ "$?" != "0" -o -z "$olpc_write_lease" ]; then
 		#  This message is never seen unless the GUI failed.
 		echo "Could not activate this XO."
 		echo "Serial number: $sn" # don't show UUID
@@ -79,3 +85,5 @@ if [ "$do_activate" == "1" ]; then
 	fi
 fi
 
+unset die
+unset exists_ofw read_ofw

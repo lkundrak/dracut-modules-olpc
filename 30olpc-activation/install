@@ -7,11 +7,19 @@ dracut_install rm
 dracut_install mv
 dracut_install ln
 dracut_install sync
+dracut_install sleep
 dracut_install poweroff
+dracut_install shutdown
+dracut_install umount
 
-dracut_install python
-dracut_install python2.6
 inst "$moddir"/activate.py /usr/libexec/initramfs-olpc/activate.py
 inst "$moddir"/upfs.py /usr/libexec/initramfs-olpc/upfs.py
 inst "$moddir"/cprl.so /usr/lib/python2.6/lib-dynload/cprl.so
 
+old_ifs=$IFS
+IFS="
+"
+for line in $(<"$moddir"/python-contents.txt); do
+	inst $line
+done
+IFS=$old_ifs

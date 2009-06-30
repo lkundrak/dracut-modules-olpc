@@ -1,4 +1,3 @@
 Make sure that it's hard to get to a shell during secure boot.
-Test on dash
 make sure root is not mounted at pre-mount time
 

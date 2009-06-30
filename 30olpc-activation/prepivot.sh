@@ -3,22 +3,46 @@
 # Licensed under the GPLv2
 #
 
-check_stolen() {
-	# FIXME need write access here
+die() {
+	if [ "$#" != "0" ]; then
+		echo $*
+	else
+		echo "Failure condition in initramfs"
+	fi
+	exit 1
+}
 
+# make root writable
+writable_start() {
+	mount -o remount,rw "$NEWROOT"
+}
+
+writable_done() {
+	mount -o remount,ro "$NEWROOT"
+}
+
+check_stolen() {
 	# XXX: we should provide some way to delete the 'stolen' identifier to
 	# XXX: recover the machine.
 	if [ -e "$NEWROOT/.private/stolen" ]; then
 		# this machine is stolen!  delete activation lease
-		rm $NEWROOT/.private/stolen
+		writable_start
+		rm -f "$NEWROOT"/security/lease.sig
+		writable_done
 		sync
 		# FIXME test this
 		poweroff
 	fi
-	[ -d "$NEWROOT/.private" ] || mkdir "$NEWROOT/.private"
-	[ -d "$NEWROOT/security/.private" ] || mkdir "$NEWROOT/security/.private"
+
+	if ! [ -d "$NEWROOT/.private" -a -d "$NEWROOT/security/.private" ]; then
+		writable_start || die
+		mkdir -p "$NEWROOT/.private"
+		mkdir -p "$NEWROOT/security/.private"
+		writable_done || die
+	fi
+
 	# mount OATC's private scratch space
-	# FIXME: currently never used, so why mount it?
+	# XXX: currently never used, so why mount it?
 	# mount --bind "$NEWROOT/.private" "$NEWROOT/security/.private"
 }
 
@@ -26,7 +50,7 @@ check_stolen() {
 # return the 'short name' for the image we should boot, or None if the
 # filesystem is not upgradable.
 frob_symlink() {
-	local target dir current alt config d tmp
+	local target dir current alt config d tmp writable=0
 	[ -h "$NEWROOT/versions/boot/current" ] || return
 
 	# the 'current' symlink is of the form /versions/pristine/<hash>
@@ -43,7 +67,8 @@ frob_symlink() {
 		[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && die
 
 		# atomically swap current and alt.
-		# FIXME need writable root
+		writable_start || die
+		writable=1
 		config=$(readlink "$NEWROOT/versions/boot")
 		d=$(mktemp -d --tmpdir="$NEWROOT/versions/configs" cfg.XXXXXXXXXX )
 		ln -s "/versions/pristine/$alt" "$d/current" || die
@@ -62,19 +87,60 @@ frob_symlink() {
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
+		if ! [ "$writable" == "1" ]; then
+			writable_start || die
+			writable=1
+		fi
 		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed || die
 	fi
 
 	# create 'running' symlink
 
 	# trac #5317: only create symlink if necessary
-	[ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" == "pristine/$current" ] && return
+	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" == "pristine/$current" ]; then
+		if [ "$writable" == "1" ]; then
+			writable_stop || die
+		fi
+		return
+	fi
+
+	if ! [ "$writable" == "1" ]; then
+		writable_start || die
+		writable=1
+	fi
 
 	rm -f "$NEWROOT/versions/running" # ignore error
 	ln -s "pristine/$current" "$NEWROOT/versions/running" || die
+	writable_stop || die
 	echo $current
-	return
 }
+
+ensure_dev() {
+	# params: dev type maj min
+	[ -e "$1/dev/$2" ] || mknod "$1/dev/$2" $3 $4 $5
+}
+
+start_bootanim() {
+	[ -x "$1/usr/sbin/boot-anim-start" ] || return
+
+	mount -t proc proc "$1"/proc
+	mount -t sysfs syfs "$1"/sys
+    # XXX might want to bind-mount /home here to allow early
+    # bootanim customization
+
+	writable_start || die
+	ensure_dev "$1" fb0 c 29 0
+	ensure_dev "$1" console c 5 1
+	ensure_dev "$1" tty1 c 4 1
+	ensure_dev "$1" tty2 c 4 2
+	chroot "$1" /usr/sbin/boot-anim-start
+	umount "$1"/proc
+	umount "$1"/sys
+	writable_done || die
+}
+
+# XXX mount gives a warning in writable_start() if there's no fstab
+echo "" >> /etc/fstab
 
 # check private security dir
 check_stolen
@@ -82,34 +148,40 @@ check_stolen
 # if we're activating, we just received a lease that we should write to disk
 # sooner rather than later
 if [ -n "$olpc_write_lease" ]; then
-	# FIXME need writable root
+	writable_start || die
 	mkdir -p $NEWROOT/security || die
 	echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
+	writable_done || die
 fi
 
-# launch pretty boot just as soon as possible
-# FIXME: how will this fit into everything?
-# start_boot_animation('/sysroot')
+
+# launch pretty boot asap
+# this covers the "regular" filesystem layout
+start_bootanim "$NEWROOT"
 
 current=$(frob_symlink)
 if [ -n "$current" ]; then
 	newroot=$NEWROOT/versions/run/$current
-	# launch pretty boot just as soon as possible (upgradable case)
-	# FIXME
-	# start_boot_animation(newroot)
+	# launch pretty boot asap
+	# this covers the "upgradable" filesytem layout with /versions etc.
+	start_bootanim $newroot
 
-	# boot_run_xo()
-	# FIXME need writable root
 	# okay, do the boot!
 	# create some bind mounts
 	# (do this after making root writable, because newer kernels will
 	#  otherwise end up with ro bind mounts against the writable root)
+	writable_start || die
 	for frag in home security versions; do
 		# ignore failures here: a debian installation (say) may not have
 		# these dirs.
 		mount --bind "$NEWROOT/$frag" "$NEWROOT/versions/run/$current/$frag"
 	done
+	writable_done || die
 
-	NEWROOT="$NEWROOT/versions/run/$current"
+	NEWROOT="$newroot"
 fi
+
+unset writable_start writable_done
+unset check_stolen ensure_dev start_bootanim
+unset die
 
