@@ -1,6 +1,6 @@
 #!/bin/bash
-inst_hook pre-mount 10 "$moddir"/premount.sh
-inst_hook pre-pivot 10 "$moddir"/prepivot.sh
+inst_hook pre-mount 10 "$moddir"/olpc-boot-premount.sh
+inst_hook pre-pivot 10 "$moddir"/olpc-boot-prepivot.sh
 
 dracut_install dd
 dracut_install rm
