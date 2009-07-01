@@ -81,7 +81,7 @@ if [ "$do_activate" == "1" ]; then
 		# activation failed.  shutdown in 2 minutes.
 		sync || die
 		sleep 60
-		poweroff || die
+		poweroff -f || die
 	fi
 fi
 

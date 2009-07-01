@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# Copyright (C) 2009 One Laptop per Child
+# Licensed under the GPLv2
+
 """activate.py contains the laptop activation routines."""
 from __future__ import division, with_statement
 import os, os.path, sys, time
-from initutil import safe_sh, clear_scr
-from initutil import blk_mounted, SD_DEV, SD_MNT, USB_DEV, USB_MNT
+from initutil import blk_mounted, SD_MNT, USB_MNT
 from initutil import sd_init, usb_init, net_init
 from socket import *
 from ipv6util import if_nametoindex

@@ -1,8 +1,6 @@
 /usr/bin/python
-/usr/bin/python-config
 /usr/bin/python2
 /usr/bin/python2.6
-/usr/bin/python2.6-config
 /usr/lib/python2.6/BaseHTTPServer.py
 /usr/lib/python2.6/Bastion.py
 /usr/lib/python2.6/CGIHTTPServer.py

@@ -9,7 +9,6 @@ dracut_install ln
 dracut_install sync
 dracut_install sleep
 dracut_install poweroff
-dracut_install shutdown
 dracut_install umount
 
 inst "$moddir"/activate.py /usr/libexec/initramfs-olpc/activate.py

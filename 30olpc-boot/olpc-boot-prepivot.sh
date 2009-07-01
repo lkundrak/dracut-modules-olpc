@@ -30,8 +30,7 @@ check_stolen() {
 		rm -f "$NEWROOT"/security/lease.sig
 		writable_done
 		sync
-		# FIXME test this
-		poweroff
+		poweroff -f || die
 	fi
 
 	if ! [ -d "$NEWROOT/.private" -a -d "$NEWROOT/security/.private" ]; then

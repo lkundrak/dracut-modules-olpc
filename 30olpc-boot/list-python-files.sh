@@ -28,7 +28,7 @@ for line in $lines; do
 	[ "$file" == "/usr/bin/pydoc" ] && continue
 
 	# misc
-	[[ "$file" =~ "(regen|README|logfix|pydoc_topics.py|decimal.py|doctest.py|pydoc.py)$" ]] && continue
+	[[ "$file" =~ "(regen|README|logfix|pydoc_topics.py|decimal.py|doctest.py|pydoc.py|python-config|python2\..*-config)$" ]] && continue
 
 	echo $file
 done
