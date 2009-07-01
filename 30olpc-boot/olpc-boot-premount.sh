@@ -36,7 +36,6 @@ getarg altboot && olpc_boot_backup=1
 getarg emu && xo=0
 
 if [ "$xo" == "1" ]; then
-	mkdir -p /ofw
 	mount -t promfs promfs /ofw || die
 	arch=$(read_ofw architecture)
 	sn=$(read_ofw mfg-data/SN)

@@ -11,6 +11,8 @@ dracut_install sleep
 dracut_install poweroff
 dracut_install umount
 
+mkdir -p "$initdir"/ofw
+
 for i in activate.py upfs.py olpc_act_gui_server.py; do
 	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
 done
