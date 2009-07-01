@@ -5,13 +5,22 @@
 """activate.py contains the laptop activation routines."""
 from __future__ import division, with_statement
 import os, os.path, sys, time
-from initutil import blk_mounted, SD_MNT, USB_MNT
-from initutil import sd_init, usb_init, net_init
 from socket import *
 from ipv6util import if_nametoindex
 from subprocess import check_call, call
-sys.path += [ '/act-gui' ] # gui_client is in a subdir
 from olpc_act_gui_client import send
+
+SD_MNT = '/mnt/sd'
+USB_MNT = '/mnt/usb'
+
+def blk_mounted(device, mnt, fstype='msdos'):
+    """Mount a block device."""
+    class blk_mgr(object):
+        def __enter__(self):
+            check_call(['/bin/mount','-t',fstype,'-o','ro',device,mnt])
+        def __exit__(self, type, value, traceback):
+            call(['/bin/umount',mnt])
+    return blk_mgr()
 
 def try_blk(device, mnt, fstype='msdos'):
     """Try to mount a block device and read keylist from it."""
@@ -40,6 +49,35 @@ def select_network_channel (channel):
     call(['/bin/ip', 'route', 'add', 'default', 'via', '172.18.0.1'])
     # should be able to ping 172.18.0.1 after this point.
     # the IPv4 address is a little hacky, prefer ipv6
+
+_sd_first = True
+def sd_init():
+    """Ensure necessary modules are loaded for sd."""
+    global _sd_first
+    # ignore modprobe failures, since older kernels don't have
+    # modular sd (trac #7369).
+    call(['/sbin/modprobe','sdhci'])
+    call(['/sbin/modprobe','mmc_block'])
+    if _sd_first:
+        _sd_first = False
+        time.sleep(3) # CAFE takes a bit to wake up
+
+_usb_first = True
+def usb_init():
+    """Ensure necessary modules are loaded for usb."""
+    global _usb_first
+    # ignore modprobe failures, since older kernels don't have
+    # modular usb (trac #7113).
+    call(['/sbin/modprobe','ohci-hcd'])
+    call(['/sbin/modprobe','usb-storage'])
+    if _usb_first:
+        _usb_first = False
+        time.sleep(5) # usb disks take a while to spin up
+
+def net_init():
+    """Ensure necessary modules are loaded for network access."""
+    check_call(['/sbin/modprobe', 'usb8xxx'])
+    call(['/sbin/modprobe','ipv6']) # ipv6 is built statically in recent kernels
 
 def try_to_get_lease(family, addr, serial_num):
     s = socket(family, SOCK_STREAM)
