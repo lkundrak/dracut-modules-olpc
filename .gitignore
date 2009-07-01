@@ -21,3 +21,4 @@ pyvt.c
 *.565
 i586
 *.src.rpm
+ipv6util.c

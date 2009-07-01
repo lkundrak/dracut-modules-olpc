@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign dist-bzip2 no-dist-gzip
-SUBDIRS = 30olpc-boot cprl act-gui
+SUBDIRS = 30olpc-boot cprl act-gui ipv6util
 DISTCLEANFILES = dracut-modules-olpc.spec
 CWD=$(shell pwd)
 

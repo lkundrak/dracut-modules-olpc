@@ -15,7 +15,7 @@ for i in activate.py upfs.py olpc_act_gui_server.py; do
 	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
 done
 
-for i in cprl.so pyvt.so pyfb.so olpc_act_gui_client.py; do
+for i in cprl.so pyvt.so pyfb.so ipv6util.so olpc_act_gui_client.py; do
 	inst "$moddir"/"$i" /usr/lib/python2.6/site-packages/"$i"
 done
 
