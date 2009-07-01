@@ -1,6 +1,6 @@
 Name:		dracut-modules-olpc
-Version:	0.1
-Release:	2%{?dist}
+Version:	@VERSION@
+Release:	1%{?dist}
 Summary:	OLPC modules for dracut initramfs
 
 Group:		System Environment/Base
