@@ -11,7 +11,7 @@ AC_CHECK_LIB([$pylib],Py_InitModule3)
 python_inc=`python -c "import distutils.sysconfig; \
 	print distutils.sysconfig.get_python_inc()"`
 
-PY_CFLAGS="-I$python_inc -fPIC -fvisibility=hidden"
+PY_CFLAGS="-I$python_inc -fPIC"
 PY_LDFLAGS="-shared"
 PY_LIBS="-l$pylib"
 AC_SUBST(PY_CFLAGS)
