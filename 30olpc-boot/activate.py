@@ -11,7 +11,7 @@ from socket import *
 from ipv6util import if_nametoindex
 from subprocess import check_call, call
 sys.path += [ '/act-gui' ] # gui_client is in a subdir
-from gui_client import send
+from olpc_act_gui_client import send
 
 def try_blk(device, mnt, fstype='msdos'):
     """Try to mount a block device and read keylist from it."""

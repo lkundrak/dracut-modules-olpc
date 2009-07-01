@@ -43,7 +43,7 @@ def initial_setup():
         f.write('1 4 1 7')
     # setup frame buffer and draw initial screen
     fb = pyfb.FrameBuffer('/dev/fb0')
-    fb.load_default_images('act-gui/images')
+    fb.load_default_images('/usr/share/olpc-act-gui/images')
     global xoff, yoff, xicon, yicon
     xoff = (fb.width - fb['startup'].width) // 2
     yoff = (fb.height - fb['startup'].height) // 2

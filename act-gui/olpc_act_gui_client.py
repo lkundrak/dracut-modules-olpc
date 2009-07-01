@@ -8,7 +8,7 @@ def send(cmd):
     # first, find a running instance of the server.  If there isn't one, start
     # one.
     if not os.path.exists(SOCKET_NAME):
-        SERVER_NAME = "/act-gui/gui_server.py"
+        SERVER_NAME = "/usr/libexec/initramfs-olpc/olpc_act_gui_server.py"
         pid = os.spawnlp(os.P_WAIT, SERVER_NAME, SERVER_NAME, SOCKET_NAME)
     # now send the command down the socket.
     try:
