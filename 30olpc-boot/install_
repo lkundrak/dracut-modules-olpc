@@ -11,9 +11,17 @@ dracut_install sleep
 dracut_install poweroff
 dracut_install umount
 
-inst "$moddir"/activate.py /usr/libexec/initramfs-olpc/activate.py
-inst "$moddir"/upfs.py /usr/libexec/initramfs-olpc/upfs.py
-inst "$moddir"/cprl.so /usr/lib/python2.6/lib-dynload/cprl.so
+for i in activate.py upfs.py olpc_act_gui_server.py; do
+	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
+done
+
+for i in cprl.so pyvt.so pyfb.so olpc_act_gui_client.py; do
+	inst "$moddir"/"$i" /usr/lib/python2.6/site-packages/"$i"
+done
+
+for i in "$moddir"/act-gui-images/*; do
+	inst "$i" /usr/share/olpc-act-gui/images/$(basename "$i")
+done
 
 old_ifs=$IFS
 IFS="

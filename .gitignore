@@ -15,4 +15,7 @@ cprl.c
 *.so
 *.o
 dracut-modules-*.tar.bz2
-
+dracut-modules-olpc.spec
+pyfb.c
+pyvt.c
+*.565
