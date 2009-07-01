@@ -20,12 +20,13 @@ OLPC-specific modules for dracut
 
 
 %build
+%configure
+make
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%{__install} -d $RPM_BUILD_ROOT/usr/share/dracut/modules.d/20olpc-bootanim
-%{__install} -m 755 -t $RPM_BUILD_ROOT/usr/share/dracut/modules.d/20olpc-bootanim 20olpc-bootanim/install 20olpc-bootanim/check 20olpc-bootanim/startanim.sh
+make DESTDIR=$RPM_BUILD_ROOT install
 
 
 %clean
@@ -35,7 +36,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc
-%{_prefix}/share/dracut/modules.d/20olpc-bootanim
+%{_prefix}/share/dracut/modules.d/30olpc-boot
 
 
 %changelog

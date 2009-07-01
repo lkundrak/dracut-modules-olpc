@@ -19,3 +19,5 @@ dracut-modules-olpc.spec
 pyfb.c
 pyvt.c
 *.565
+i586
+*.src.rpm
