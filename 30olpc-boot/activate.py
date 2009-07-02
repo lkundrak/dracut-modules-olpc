@@ -121,9 +121,9 @@ def activate (serial_num, uuid):
     we set up networking and try to get a lease from the school server
     on wireless channels 1, 6, and 11."""
 
-    print "********************************************************"
-    print "Activating...."
-    print "********************************************************"
+    print >> sys.stderr, "********************************************************"
+    print >> sys.stderr, "Activating...."
+    print >> sys.stderr, "********************************************************"
 
     # must be imported late, to avoid loading keys before OFW is mounted
     from bitfrost.leases.core import find_lease
@@ -214,8 +214,12 @@ def main():
     import bitfrost.leases.keys
     check_call(['/bin/umount','/ofw'])
 
-    print activate(sys.argv[1], sys.argv[2])
-    sys.exit(0)
+    ret = activate(sys.argv[1], sys.argv[2])
+    if ret is not None:
+        print ret
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
