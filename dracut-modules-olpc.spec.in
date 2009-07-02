@@ -10,7 +10,7 @@ Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:	dracut
-Requires:		dracut, olpc-bootanim
+Requires:		dracut, olpc-bootanim, bitfrost
 
 %description
 OLPC-specific modules for dracut

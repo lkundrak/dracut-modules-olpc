@@ -10,7 +10,9 @@ dracut_install sync
 dracut_install sleep
 dracut_install poweroff
 dracut_install umount
+dracut_install /sbin/iwconfig /sbin/ip
 
+# mount point
 mkdir -p "$initdir"/ofw
 
 for i in activate.py upfs.py olpc_act_gui_server.py; do
@@ -24,6 +26,16 @@ done
 for i in "$moddir"/act-gui-images/*; do
 	inst "$i" /usr/share/olpc-act-gui/images/$(basename "$i")
 done
+
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/__init__.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/__init__.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/core.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/keys.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/crypto.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/errors.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/__init__.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/json.py
+dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/pyverify.so
 
 old_ifs=$IFS
 IFS="

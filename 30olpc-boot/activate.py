@@ -34,19 +34,19 @@ def try_blk(device, mnt, fstype='msdos'):
 def select_network_channel (channel):
     check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
     check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
-    check_call(['/bin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
+    check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
     # set up link-local address
     mac = open('/sys/class/net/msh0/address').read().strip().split(':')
     top = int(mac[0], 16) ^ 2 # universal/local bit complemented
     ll = 'fe80::%02x%s:%sff:fe%s:%s%s' % \
          (top, mac[1], mac[2], mac[3], mac[4], mac[5])
-    call(['/bin/ip', 'addr', 'add', '%s/64' % ll, 'dev', 'msh0'])
+    call(['/sbin/ip', 'addr', 'add', '%s/64' % ll, 'dev', 'msh0'])
     a = 2+(ord(os.urandom(1)[0])%250)
-    call(['/bin/ip', 'addr', 'add', '172.18.16.%d' % a, 'dev', 'msh0'])
+    call(['/sbin/ip', 'addr', 'add', '172.18.16.%d' % a, 'dev', 'msh0'])
     # XXX: BSSIDs of all 0, F, or 4 are invalid
     # set up route to 172.18.0.1
-    call(['/bin/ip', 'route', 'add', '172.18.0.0/23', 'dev', 'msh0'])
-    call(['/bin/ip', 'route', 'add', 'default', 'via', '172.18.0.1'])
+    call(['/sbin/ip', 'route', 'add', '172.18.0.0/23', 'dev', 'msh0'])
+    call(['/sbin/ip', 'route', 'add', 'default', 'via', '172.18.0.1'])
     # should be able to ping 172.18.0.1 after this point.
     # the IPv4 address is a little hacky, prefer ipv6
 
@@ -111,7 +111,7 @@ def try_network (channel, serial_num):
             except: pass
         return None # unsuccessful.
     finally:
-        call(['/bin/ip','link','set','dev','msh0','down'])
+        call(['/sbin/ip','link','set','dev','msh0','down'])
 
 
 def activate (serial_num, uuid):
@@ -208,6 +208,11 @@ def main():
     if len(sys.argv) != 3:
         print >> sys.stderr, "Usage: %s SN UUID" % sys.argv[0]
         sys.exit(1)
+
+    # read extra deployment keys
+    check_call(['/bin/mount','-t','promfs','promfs','/ofw'])
+    import bitfrost.leases.keys
+    check_call(['/bin/umount','/ofw'])
 
     print activate(sys.argv[1], sys.argv[2])
     sys.exit(0)
