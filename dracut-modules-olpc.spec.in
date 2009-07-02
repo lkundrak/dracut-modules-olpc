@@ -9,7 +9,7 @@ URL:		http://dev.laptop.org/git/users/dsd/dracut-modules-olpc
 Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-BuildRequires:	dracut
+BuildRequires:	dracut zlib-devel python-devel
 Requires:		dracut, olpc-bootanim, bitfrost
 
 %description
