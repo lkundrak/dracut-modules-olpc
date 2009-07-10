@@ -100,9 +100,11 @@ frob_symlink() {
 		if [ "$writable" == "1" ]; then
 			writable_done || return 1
 		fi
-		return
+		echo $current
+		return 0
 	fi
 
+	# make symlink
 	if ! [ "$writable" == "1" ]; then
 		writable_start || return 1
 		writable=1
@@ -112,6 +114,7 @@ frob_symlink() {
 	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
 	writable_done || return 1
 	echo $current
+	return 0
 }
 
 ensure_dev() {
