@@ -98,7 +98,7 @@ frob_symlink() {
 	# trac #5317: only create symlink if necessary
 	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" == "pristine/$current" ]; then
 		if [ "$writable" == "1" ]; then
-			writable_stop || return 1
+			writable_done || return 1
 		fi
 		return
 	fi
@@ -110,7 +110,7 @@ frob_symlink() {
 
 	rm -f "$NEWROOT/versions/running" # ignore error
 	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
-	writable_stop || return 1
+	writable_done || return 1
 	echo $current
 }
 
