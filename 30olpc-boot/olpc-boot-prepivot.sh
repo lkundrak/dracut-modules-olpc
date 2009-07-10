@@ -50,35 +50,35 @@ check_stolen() {
 # filesystem is not upgradable.
 frob_symlink() {
 	local target dir current alt config d tmp writable=0
-	[ -h "$NEWROOT/versions/boot/current" ] || return
+	[ -h "$NEWROOT/versions/boot/current" ] || return 0
 
 	# the 'current' symlink is of the form /versions/pristine/<hash>
 	# we want to return <hash>
 	target=$(readlink "$NEWROOT/versions/boot/current")
 	dir=$(dirname "$target")
 	current=$(basename "$target")
-	[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && die
+	[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
 
 	if [[ "$olpc_boot_backup" == "1" ]]; then
 		target=$(readlink "$NEWROOT/versions/boot/alt")
 		dir=$(dirname "$target")
 		alt=$(basename "$target")
-		[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && die
+		[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
 
 		# atomically swap current and alt.
-		writable_start || die
+		writable_start || return 1
 		writable=1
 		config=$(readlink "$NEWROOT/versions/boot")
 		d=$(mktemp -d --tmpdir="$NEWROOT/versions/configs" cfg.XXXXXXXXXX )
-		ln -s "/versions/pristine/$alt" "$d/current" || die
-		ln -s "/versions/pristine/$current" "$d/alt" || die
-		ln -s "${d#$NEWROOT/versions/}" "$NEWROOT/versions/boot.tmp" || die
-		sync || die # superstition
-		mv "$NEWROOT/versions/boot.tmp" "$NEWROOT/versions/boot" || die
-		sync || die # superstition
+		ln -s "/versions/pristine/$alt" "$d/current" || return 1
+		ln -s "/versions/pristine/$current" "$d/alt" || return 1
+		ln -s "${d#$NEWROOT/versions/}" "$NEWROOT/versions/boot.tmp" || return 1
+		sync || return 1 # superstition
+		mv "$NEWROOT/versions/boot.tmp" "$NEWROOT/versions/boot" || return 1
+		sync || return 1 # superstition
 
 		# remove old config
-		rm -rf "$NEWROOT/$config" || die
+		rm -rf "$NEWROOT/$config" || return 1
 		tmp=$current
 		current=$alt
 		alt=$tmp
@@ -87,10 +87,10 @@ frob_symlink() {
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
 		if ! [ "$writable" == "1" ]; then
-			writable_start || die
+			writable_start || return 1
 			writable=1
 		fi
-		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed || die
+		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed || return 1
 	fi
 
 	# create 'running' symlink
@@ -98,19 +98,19 @@ frob_symlink() {
 	# trac #5317: only create symlink if necessary
 	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" == "pristine/$current" ]; then
 		if [ "$writable" == "1" ]; then
-			writable_stop || die
+			writable_stop || return 1
 		fi
 		return
 	fi
 
 	if ! [ "$writable" == "1" ]; then
-		writable_start || die
+		writable_start || return 1
 		writable=1
 	fi
 
 	rm -f "$NEWROOT/versions/running" # ignore error
-	ln -s "pristine/$current" "$NEWROOT/versions/running" || die
-	writable_stop || die
+	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
+	writable_stop || return 1
 	echo $current
 }
 
@@ -159,6 +159,8 @@ fi
 start_bootanim "$NEWROOT"
 
 current=$(frob_symlink)
+[ "$?" != "0" ] && die
+
 if [ -n "$current" ]; then
 	newroot=$NEWROOT/versions/run/$current
 	# launch pretty boot asap
