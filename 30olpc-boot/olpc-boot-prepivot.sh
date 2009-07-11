@@ -180,9 +180,12 @@ if [ -n "$current" ]; then
 		# these dirs.
 		mount --bind "$NEWROOT/$frag" "$NEWROOT/versions/run/$current/$frag"
 	done
-	writable_done || die
 
 	NEWROOT="$newroot"
+	# Note: for the "upgradable case", we leave root mounted rw (as has always
+	# been done for OLPC) before entering the real system. This is because
+	# when you're chrooted in the real system, you can't
+	# "mount -o remount,rw /" because / isn't a real mount.
 fi
 
 unset writable_start writable_done
