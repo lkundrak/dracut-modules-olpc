@@ -7,6 +7,7 @@ from __future__ import division, with_statement
 import os, os.path, sys, time
 from socket import *
 from ipv6util import if_nametoindex
+import subprocess
 from subprocess import check_call, call
 from olpc_act_gui_client import send
 
@@ -31,7 +32,22 @@ def try_blk(device, mnt, fstype='msdos'):
     except:
         return None
 
-def select_network_channel (channel):
+def set_addresses_bss ():
+    # set up link-local address
+    mac = open('/sys/class/net/eth0/address').read().strip().split(':')
+    top = int(mac[0], 16) ^ 2 # universal/local bit complemented
+    ll = 'fe80::%02x%s:%sff:fe%s:%s%s' % \
+         (top, mac[1], mac[2], mac[3], mac[4], mac[5])
+    call(['/sbin/ip', 'addr', 'add', '%s/64' % ll, 'dev', 'eth0'])
+    a = 2+(ord(os.urandom(1)[0])%250)
+    call(['/sbin/ip', 'addr', 'add', '172.18.127.%d/19' % a,
+          'brd', '172.18.127.255', 'dev', 'eth0'])
+    # XXX: BSSIDs of all 0, F, or 4 are invalid
+    call(['/sbin/ip', 'route', 'add', 'default', 'via', '172.18.96.1', 'dev', 'eth0'])
+    # should be able to ping 172.18.0.1 after this point.
+    # the IPv4 address is a little hacky, prefer ipv6
+
+def set_addresses_mesh ():
     check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
     check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
     check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
@@ -40,13 +56,14 @@ def select_network_channel (channel):
     top = int(mac[0], 16) ^ 2 # universal/local bit complemented
     ll = 'fe80::%02x%s:%sff:fe%s:%s%s' % \
          (top, mac[1], mac[2], mac[3], mac[4], mac[5])
-    call(['/sbin/ip', 'addr', 'add', '%s/64' % ll, 'dev', 'msh0'])
     a = 2+(ord(os.urandom(1)[0])%250)
+    call(['/sbin/ip', 'addr', 'add', '172.18.16.%d/24' % a,
+          'brd', '172.18.16.255', 'dev', 'msh0'])
     call(['/sbin/ip', 'addr', 'add', '172.18.16.%d' % a, 'dev', 'msh0'])
     # XXX: BSSIDs of all 0, F, or 4 are invalid
     # set up route to 172.18.0.1
     call(['/sbin/ip', 'route', 'add', '172.18.0.0/23', 'dev', 'msh0'])
-    call(['/sbin/ip', 'route', 'add', 'default', 'via', '172.18.0.1'])
+    call(['/sbin/ip', 'route', 'add', 'default', 'via', '172.18.0.1', 'dev', 'msh0'])
     # should be able to ping 172.18.0.1 after this point.
     # the IPv4 address is a little hacky, prefer ipv6
 
@@ -61,6 +78,104 @@ def sd_init():
     if _sd_first:
         _sd_first = False
         time.sleep(3) # CAFE takes a bit to wake up
+
+def select_mesh_channel (channel):
+    check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
+    check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
+    check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
+    set_addresses_mesh()
+
+def select_bss (ssid):
+    print "attempting connection to open BSS", ssid
+    check_call(['/sbin/ip','link','set','dev','eth0','up']) # rely on ipv6 autoconfig
+    check_call(['/sbin/iwconfig','eth0','mode','managed','essid',ssid])
+
+    # wait for association, max 5 secs
+    for i in range(0, 10):
+        time.sleep(0.5)
+        output = subprocess.Popen(["/sbin/iwconfig", "eth0"],
+                                  stdout=subprocess.PIPE).communicate()[0]
+        lines = output.split("\n")
+        if len(lines) < 2:
+            print "bad iwconfig output?"
+            return False
+
+        ssidpos = lines[0].index("ESSID:")
+        iw_ssid = lines[0][ssidpos + 6:].strip()
+        if iw_ssid != '"' + ssid + '"':
+            if iw_ssid != '""':
+                print "unexpected ESSID value:", iw_ssid
+            continue
+
+        appos = lines[1].find("Access Point: ")
+        if appos == -1:
+            continue
+        iw_ap = lines[1][appos+14:].strip()
+        if iw_ap[0].isdigit():
+            print "connected!"
+            set_addresses_bss()
+            return True
+
+    return False
+
+def try_bss_network (ssid, serial_num):
+    """Try to get a keylist from the server on a given BSS network."""
+    try:
+        associated = select_bss(ssid)
+        if associated:
+            time.sleep(4) # let network settle down
+            return contact_lease_server('eth0', serial_num)
+        else:
+            return None
+    finally:
+        call(['/sbin/ip','link','set','dev','eth0','down'])
+
+def _find_open_bss_nets(iface):
+    output = subprocess.Popen(["/sbin/iwlist", iface, "scan"], stdout=subprocess.PIPE).communicate()[0]
+    nets = []
+    this_essid = ""
+
+    for line in output.split("\n"):
+        line = line.strip()
+
+        if line.startswith("ESSID:\""):
+            this_essid = line[7:-1]
+            continue
+
+        if line.startswith("Mode:"):
+            if line != "Mode:Master" and line != "Mode:Managed":
+                # ignore non-BSS networks
+                this_essid = ""
+            continue
+
+        if line == "Encryption key:off":
+            if len(this_essid) > 0:
+                if this_essid not in nets:
+                    nets.append(this_essid)
+                this_essid = ""
+
+    return nets
+
+def find_open_bss_nets (iface="eth0"):
+    """
+    Scans for networks and returns list of SSIDs for open BSSs
+    """
+
+    check_call(['/sbin/ip','link','set','dev','eth0','up'])
+    try:
+        return _find_open_bss_nets(iface)
+    finally:
+        call(['/sbin/ip','link','set','dev','eth0','down'])
+
+def check_stolen(keylist):
+    if keylist != 'STOLEN':
+        return False
+
+    send('wireless fail')
+    send('wireless stolen')
+    send('stolen')
+    send('freeze 1')
+    return True
 
 _usb_first = True
 def usb_init():
@@ -96,20 +211,30 @@ def try_to_get_lease(family, addr, serial_num):
     finally:
         s.close()
 
-def try_network (channel, serial_num):
+def contact_lease_server (iface, serial_num):
+    # try to contact the lease server
+    if iface.startswith("msh"):
+        xs6addr = 'fe80::abcd:ef01'
+    else:
+        xs6addr = 'fe80::abcd:ef02'
+
+    for family, addr in [ (AF_INET6,(xs6addr,191,
+                                     0, if_nametoindex(iface))),
+                          (AF_INET, ('172.18.0.1',191)), ] * 4:
+        try:
+            l = try_to_get_lease(family, addr, serial_num)
+            if l is not None:
+                return l
+        except:
+            pass
+    return None # unsuccessful
+
+def try_mesh_network (channel, serial_num):
     """Try to get a keylist from the server on the given wireless channel."""
-    select_network_channel(channel)
+    select_mesh_channel(channel)
     try:
         time.sleep(4) # let network settle down
-        # try to contact the school server.
-        for family, addr in [ (AF_INET6,('fe80::abcd:ef01',191,
-                                         0, if_nametoindex('msh0'))),
-                              (AF_INET, ('172.18.0.1',191)), ] * 4:
-            try:
-                l = try_to_get_lease(family, addr, serial_num)
-                if l is not None: return l
-            except: pass
-        return None # unsuccessful.
+        return contact_lease_server('msh0', serial_num)
     finally:
         call(['/sbin/ip','link','set','dev','msh0','down'])
 
@@ -170,23 +295,33 @@ def activate (serial_num, uuid):
         try:
             send('wireless start')
             net_init()
+
+            candidates = find_open_bss_nets()
+            print "open BSS candidates:", candidates
+            for ssid in candidates:
+                keylist = try_bss_network(ssid, serial_num)
+                if not keylist:
+                    continue
+                if check_stolen(keylist):
+                    return None
+                try:
+                    # return minimized lease
+                    return find_lease(serial_num, uuid, keylist)
+                except:
+                    continue
+
             for chan in [1, 6, 11, 1, 6, 11]:
                 send('wireless state '+str(chan))
-                keylist = try_network(chan, serial_num)
+                keylist = try_mesh_network(chan, serial_num)
                 if keylist:
                     send('wireless success')
-                    if keylist == 'STOLEN':
-                        send('wireless fail')
-                        send('wireless stolen')
-                        send('stolen')
-                        send('freeze 1')
+                    if check_stolen(keylist):
                         return None # machine's been reported STOLEN!
                     try:
                         # return minimized lease
                         return find_lease(serial_num, uuid, keylist)
                     except:
-                        send('wireless fail')
-                        send('wireless lock')
+						continue
             else:
                 send('wireless fail')
         except:

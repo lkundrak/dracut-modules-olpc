@@ -14,6 +14,9 @@ dracut_install /sbin/iwconfig /sbin/ip
 dracut_install readlink
 dracut_install dirname
 dracut_install basename
+dracut_install ip
+dracut_install iwconfig
+dracut_install iwlist
 
 # mount points used by initramfs code
 mkdir -p "$initdir"/ofw
