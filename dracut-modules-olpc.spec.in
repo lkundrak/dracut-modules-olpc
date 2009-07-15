@@ -6,14 +6,16 @@ Summary:	OLPC modules for dracut initramfs
 Group:		System Environment/Base
 License:	GPLv2
 URL:		http://dev.laptop.org/git/users/dsd/dracut-modules-olpc
-Source0:	%{name}-%{version}.tar.bz2
+Source0:	http://dev.laptop.org/~dsd/dracut-modules/olpc/%{name}-%{version}.tar.bz2
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:	zlib-devel, python-devel
 Requires:		dracut, bitfrost
 
 %description
-OLPC-specific modules for dracut
+Dracut initramfs modules to implement OLPC-specific features, including
+antitheft, switching between OS updates, and the OLPC boot animation.
+
 
 %prep
 %setup -q
@@ -21,7 +23,7 @@ OLPC-specific modules for dracut
 
 %build
 %configure
-make
+make %{?_smp_mflags}
 
 
 %install
@@ -35,15 +37,12 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc
+%doc README COPYING
 %{_prefix}/share/dracut/modules.d/30olpc-boot
 %{_libdir}/dracut-modules-olpc
 
 
 %changelog
-* Tue Jun 23 2009 Daniel Drake <dsd@laptop.org> - 0.1-2
-- Add dependency on olpc-bootanim
-
-* Tue Jun 23 2009 Daniel Drake <dsd@laptop.org> - 0.1-1
-- Initial release, includes olpc-bootanim module
+* Wed Jul 15 2009 Daniel Drake <dsd@laptop.org> - 0.2.1-1
+- Initial import
 

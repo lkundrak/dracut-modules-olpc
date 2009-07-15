@@ -3,7 +3,7 @@ SUBDIRS = 30olpc-boot cprl act-gui ipv6util
 DISTCLEANFILES = dracut-modules-olpc.spec ChangeLog
 CWD=$(shell pwd)
 
-rpms: dist
+rpms:
 	rpmbuild --clean --define "_specdir $(CWD)" --define "_sourcedir $(CWD)" --define "_builddir $(CWD)" --define "_srcrpmdir $(CWD)" --define "_rpmdir $(CWD)" -ba dracut-modules-olpc.spec
 .PHONY: rpms
 
