@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc
 %{_prefix}/share/dracut/modules.d/30olpc-boot
+%{_libdir}/dracut-modules-olpc
 
 
 %changelog

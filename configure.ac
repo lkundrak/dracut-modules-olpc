@@ -21,6 +21,9 @@ AC_SUBST(PY_LIBS)
 DRACUT_MODDIR="$datadir/dracut/modules.d/30olpc-boot"
 AC_SUBST(DRACUT_MODDIR)
 
+DRACUT_LIBDIR="$libdir/dracut-modules-olpc"
+AC_SUBST(DRACUT_LIBDIR)
+
 AC_CONFIG_FILES([dracut-modules-olpc.spec Makefile 30olpc-boot/Makefile cprl/Makefile ipv6util/Makefile act-gui/Makefile act-gui/images/Makefile])
 AC_OUTPUT
 

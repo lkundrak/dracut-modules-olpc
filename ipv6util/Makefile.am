@@ -1,4 +1,4 @@
-dmoddir = $(DRACUT_MODDIR)
+dmoddir = $(DRACUT_LIBDIR)
 dmod_PROGRAMS = ipv6util.so
 
 nodist_ipv6util_so_SOURCES = ipv6util.c

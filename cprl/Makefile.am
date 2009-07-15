@@ -1,4 +1,4 @@
-cprldir = $(DRACUT_MODDIR)
+cprldir = $(DRACUT_LIBDIR)
 cprl_PROGRAMS = cprl.so
 
 cprl_so_SOURCES = cprl.h

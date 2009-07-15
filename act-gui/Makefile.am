@@ -1,8 +1,10 @@
 SUBDIRS = images
 dmoddir = $(DRACUT_MODDIR)
-dmod_PROGRAMS = pyfb.so pyvt.so
 dist_dmod_SCRIPTS = olpc_act_gui_server.py
 dist_dmod_DATA = olpc_act_gui_client.py
+
+dlibdir = $(DRACUT_LIBDIR)
+dlib_PROGRAMS = pyfb.so pyvt.so
 
 nodist_pyfb_so_SOURCES = pyfb.c
 pyfb_so_SOURCES = fbutil.c fbutil.h
