@@ -50,11 +50,6 @@ dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/pyverify.so
 instmods vfat usb_storage usb8xxx libertas ohci_hcd ehci_hcd sdhci sd
 [ -e "/lib/firmware/usb8388.bin" ] && dracut_install /lib/firmware/usb8388.bin
 
-# FIXME: dracut doesn't install firmware loading support?
-inst_rules 50-firmware.rules
-dracut_install /lib/udev/firmware.sh
-dracut_install uname cat
-
 old_ifs=$IFS
 IFS="
 "
