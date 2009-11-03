@@ -191,7 +191,8 @@ def usb_init():
 
 def net_init():
     """Ensure necessary modules are loaded for network access."""
-    check_call(['/sbin/modprobe', 'usb8xxx'])
+    call(['/sbin/modprobe', 'usb8xxx']) # XO-1
+    call(['/sbin/modprobe', 'libertas_sdio']) # XO-1.5
     call(['/sbin/modprobe','ipv6']) # ipv6 is built statically in recent kernels
 
 def try_to_get_lease(family, addr, serial_num):
@@ -321,7 +322,7 @@ def activate (serial_num, uuid):
                         # return minimized lease
                         return find_lease(serial_num, uuid, keylist)
                     except:
-						continue
+                        continue
             else:
                 send('wireless fail')
         except:

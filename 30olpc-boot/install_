@@ -47,8 +47,10 @@ dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/__init__.py
 dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/json.py
 dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/pyverify.so
 
-instmods vfat usb_storage usb8xxx libertas ohci_hcd ehci_hcd sdhci sd
-[ -e "/lib/firmware/usb8388.bin" ] && dracut_install /lib/firmware/usb8388.bin
+instmods vfat usb_storage usb8xxx libertas libertas_sdio ohci_hcd ehci_hcd sdhci sd
+dracut_install -o /lib/firmware/usb8388.bin
+dracut_install -o /lib/firmware/sd8686.bin
+dracut_install -o /lib/firmware/sd8686_helper.bin
 
 old_ifs=$IFS
 IFS="
