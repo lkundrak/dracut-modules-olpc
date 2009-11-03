@@ -12,12 +12,11 @@ exists_ofw()
 
 read_ofw()
 {
-    # Trim off the \n\0 on OFW mfg data device tree nodes.  According to
-    # OLPC trac #2085, this is a bug that will eventually be fixed -- but
-    # it doesn't hurt to try to strip them off in any case
-	# Note that bash strips the \0 so we just have to remove any trailing \n
-	local contents=$(</ofw/$1)
-	echo ${contents%\\n}
+	# OFW mfg data might include \n\0 at the end of the file. but these are
+	# automatically stripped by the shell.
+	local contents=$(cat /ofw/$1)
+	# Use printf, to avoid echo's expansion of backslash-escaped sequences.
+	printf "%s" $contents
 }
 
 die() {
@@ -35,13 +34,13 @@ getarg activate && do_activate=1
 getarg altboot && olpc_boot_backup=1
 getarg emu && xo=0
 
-if [ "$xo" == "1" ]; then
+if [ "$xo" = "1" ]; then
 	mount -t promfs promfs /ofw || die
 	arch=$(read_ofw architecture)
 	sn=$(read_ofw mfg-data/SN)
 	uuid=$(read_ofw mfg-data/U#)
 	bootpath=$(read_ofw chosen/bootpath)
-	ak=$(exists_ofw mfg-data/ak)
+	exists_ofw mfg-data/ak && ak=1
 
 	# import bitfrost.leases.keys
 	umount /ofw || die
@@ -60,7 +59,9 @@ echo "$sn/$uuid" > /dev/urandom || die
 [ -e /dev/hwrng ] && dd if=/dev/hwrng of=/dev/urandom bs=1k count=1 >/dev/null 2>&1
 
 # are we booting from an alternate image?
-[ -n "$bootpath" -a -z "${bootpath%%*\\boot-alt\\*}" ] && olpc_boot_backup=1
+case $bootpath in
+	*\\boot-alt\\*) olpc_boot_backup=1 ;;
+esac
 
 # check for activation code, perform activation if necessary
 
@@ -68,10 +69,13 @@ echo "$sn/$uuid" > /dev/urandom || die
 # be actos.  But some firmwares inadvertently pass the ramdisk name instead
 # (actrd).
 # look for \actos.zip and \actrd.zip in the bootpath
-[ -n "$bootpath" ] && [[ -z "${bootpath%%*\\actos.zip*}" || -z "${bootpath%%*\\actrd.zip*}" ]] && do_activate=1
-[ "$xo" == "0" -o "$ak" == "1" ] && do_activate=0
+case $bootpath in
+	*\\actos.zip*|*actrd.zip*) do_activate=1 ;;
+esac
 
-if [ "$do_activate" == "1" ]; then
+[ "$xo" = "0" -o "$ak" = "1" ] && do_activate=0
+
+if [ "$do_activate" = "1" ]; then
 	olpc_write_lease=$(/usr/libexec/initramfs-olpc/activate.py $sn $uuid)
 	if [ "$?" != "0" -o -z "$olpc_write_lease" ]; then
 		#  This message is never seen unless the GUI failed.

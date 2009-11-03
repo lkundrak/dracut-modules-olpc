@@ -59,7 +59,7 @@ frob_symlink() {
 	current=$(basename "$target")
 	[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
 
-	if [[ "$olpc_boot_backup" == "1" ]]; then
+	if [ "$olpc_boot_backup" = "1" ]; then
 		target=$(readlink "$NEWROOT/versions/boot/alt")
 		dir=$(dirname "$target")
 		alt=$(basename "$target")
@@ -86,7 +86,7 @@ frob_symlink() {
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
-		if ! [ "$writable" == "1" ]; then
+		if ! [ "$writable" = "1" ]; then
 			writable_start || return 1
 			writable=1
 		fi
@@ -96,8 +96,8 @@ frob_symlink() {
 	# create 'running' symlink
 
 	# trac #5317: only create symlink if necessary
-	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" == "pristine/$current" ]; then
-		if [ "$writable" == "1" ]; then
+	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$current" ]; then
+		if [ "$writable" = "1" ]; then
 			writable_done || return 1
 		fi
 		echo $current
@@ -105,7 +105,7 @@ frob_symlink() {
 	fi
 
 	# make symlink
-	if ! [ "$writable" == "1" ]; then
+	if ! [ "$writable" = "1" ]; then
 		writable_start || return 1
 		writable=1
 	fi
