@@ -12,6 +12,13 @@ die() {
 	exit 1
 }
 
+# do we have a separate boot partition?
+is_partitioned() {
+	# XXX: rework this when XO-1 OS grows partition support
+	local ver=$(cat /sys/class/dmi/id/product_version)
+	[ "$ver" = "1.5" ]
+}
+
 # make root writable
 writable_start() {
 	mount -o remount,rw "$NEWROOT"
@@ -19,6 +26,11 @@ writable_start() {
 
 writable_done() {
 	mount -o remount,ro "$NEWROOT"
+}
+
+get_boot_device() {
+	# FIXME: determine boot partition intelligently
+	echo "/dev/sda1"
 }
 
 check_stolen() {
@@ -82,6 +94,23 @@ frob_symlink() {
 		tmp=$current
 		current=$alt
 		alt=$tmp
+
+		# XXX: there's a small race condition here, we could lose power after
+		# swinging the root symlinks but before updating /boot
+		if is_partitioned; then
+			# XXX: and this section itself is not atomic. what can we do?
+			mkdir -p /boot
+			mount $(get_boot_device) /boot || return 1
+			local old_boot_target=$(readlink /boot/boot)
+			local old_boot_hash=$(basename "$old_boot_target")
+			local new_boot_target=$(readlink /boot/boot/alt)
+			local new_boot_hash=$(basename "$new_boot_target")
+			rm -f /boot/boot/alt/alt
+			ln -snf ../$old_boot_hash /boot/boot/alt/alt
+			ln -snf boot-versions/$new_boot_hash /boot/boot
+			ln -snf boot-versions/$old_boot_hash /boot/boot-alt
+			umount /boot
+		fi
 	fi
 
 	# check that /versions/run/$current exists; create if needed.
