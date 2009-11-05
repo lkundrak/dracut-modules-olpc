@@ -32,9 +32,13 @@ writable_done() {
 }
 
 get_boot_device() {
+	local tmp
+
 	case $root in
 	block:/dev/mmcblk?p?)
-		echo ${root#block:} | sed -e 's:.$:1:'
+		tmp=${root#block:}
+		tmp=${tmp%p?}
+		echo ${tmp}p1
 		return 0
 		;;
 	esac
