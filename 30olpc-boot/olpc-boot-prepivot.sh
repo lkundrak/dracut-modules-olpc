@@ -14,9 +14,12 @@ die() {
 
 # do we have a separate boot partition?
 is_partitioned() {
-	# XXX: rework this when XO-1 OS grows partition support
-	local ver=$(cat /sys/class/dmi/id/product_version)
-	[ "$ver" = "1.5" ]
+	# if root device ends in p[0-9] then we're on a partitioned system
+	# XXX: does this need improving?
+	case $root in
+		*p[0-9]) return 0 ;;
+		*) return 1 ;;
+	esac
 }
 
 # make root writable
@@ -29,8 +32,14 @@ writable_done() {
 }
 
 get_boot_device() {
-	# FIXME: determine boot partition intelligently
-	echo "/dev/sda1"
+	case $root in
+	block:/dev/mmcblk?p?)
+		echo ${root#block:} | sed -e 's:.$:1:'
+		return 0
+		;;
+	esac
+	echo "UNKNOWN"
+	return 1
 }
 
 check_stolen() {
@@ -57,10 +66,130 @@ check_stolen() {
 	# mount --bind "$NEWROOT/.private" "$NEWROOT/security/.private"
 }
 
+# Atomically swing a symlink at $2 from its current contents to $1
+rewrite_symlink()
+{
+	local retcode
+	local dir=$(dirname "$2")
+	local tmpdir=$(mktemp -d --tmpdir "$dir" sym.XXXXXXXXXX)
+	local tmplnk="$tmpdir"/symlink
+
+	ln -s "$1" "$tmplnk"
+	retcode=$?
+	if [ $retcode != 0 ]; then
+		rm -rf "$tmpdir"
+		return $retcode
+	fi
+
+	mv -f "$tmplnk" "$2"
+	retcode=$?
+	rm -rf "$tmpdir"
+	return $retcode
+}
+
 # frob the /current symlink to start from the backup filesystem if requested
 # return the 'short name' for the image we should boot, or None if the
 # filesystem is not upgradable.
 frob_symlink() {
+	local retcode
+	if is_partitioned; then
+		current=$(frob_symlink_partitioned)
+		retcode=$?
+	else
+		current=$(frob_symlink_unpartitioned)
+		retcode=$?
+	fi
+
+	[ $retcode = 0 ] || return retcode
+
+	# check that /versions/run/$current exists; create if needed.
+	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
+		if ! [ "$writable" = "1" ]; then
+			writable_start || return 1
+			writable=1
+		fi
+		# redirect stdout to stderr so that it doesn't interfere with the
+		# return value of this function (which has to be just an OS hash)
+		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed >&2 || return 1
+	fi
+
+	# create 'running' symlink
+
+	# trac #5317: only create symlink if necessary
+	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$current" ]; then
+		if [ "$writable" = "1" ]; then
+			writable_done || return 1
+		fi
+		echo $current
+		return 0
+	fi
+
+	# make symlink
+	if ! [ "$writable" = "1" ]; then
+		writable_start || return 1
+		writable=1
+	fi
+
+	rm -f "$NEWROOT/versions/running" # ignore error
+	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
+	writable_done || return 1
+	echo $current
+	return 0
+}
+
+
+_frob_symlink_partitioned() {
+	local target dir current alt
+
+	[ -h /boot/boot -a -d /boot/boot-versions ] || return 0
+
+	# read hash from /boot/boot symlink
+	target=$(readlink /boot/boot)
+	dir=$(dirname "$target")
+	[ "$dir" != "boot-versions" ] && return 1
+	current=$(basename $target)
+
+	if [ "$olpc_boot_backup" = "1" -a -h /boot/boot/alt ]; then
+		target=$(readlink /boot/boot/alt)
+		dir=$(dirname "$target")
+		[ "$dir" != ".." ] && return 1
+		alt=$(basename "$target")
+
+		sync || return 1 # superstition
+
+		# make alternate link in new configuration point to the non-backup OS
+		rewrite_symlink ../"$current" /boot/boot/alt/alt || return 1
+
+		# update /boot to point at alternate OS
+		rewrite_symlink boot-versions/$alt /boot || return 1
+
+		current=$alt
+	fi
+
+	echo $current
+	return 0
+}
+
+frob_symlink_partitioned() {
+	# wrap _frob_symlink_partitioned so that we're sure to unmount /boot
+	# on all the exit paths
+	local bdev retcode
+
+	bdev=$(get_boot_device)
+	[ $? != 0 ] && return 1
+
+	mkdir -p /boot
+	mount $bdev /boot || return 1
+
+	_frob_symlink_partitioned
+	retcode=$?
+
+	umount /boot
+	return $retcode
+}
+
+
+frob_symlink_unpartitioned() {
 	local target dir current alt config d tmp writable=0
 	[ -h "$NEWROOT/versions/boot/current" ] || return 0
 
@@ -94,54 +223,8 @@ frob_symlink() {
 		tmp=$current
 		current=$alt
 		alt=$tmp
-
-		# XXX: there's a small race condition here, we could lose power after
-		# swinging the root symlinks but before updating /boot
-		if is_partitioned; then
-			# XXX: and this section itself is not atomic. what can we do?
-			mkdir -p /boot
-			mount $(get_boot_device) /boot || return 1
-			local old_boot_target=$(readlink /boot/boot)
-			local old_boot_hash=$(basename "$old_boot_target")
-			local new_boot_target=$(readlink /boot/boot/alt)
-			local new_boot_hash=$(basename "$new_boot_target")
-			rm -f /boot/boot/alt/alt
-			ln -snf ../$old_boot_hash /boot/boot/alt/alt
-			ln -snf boot-versions/$new_boot_hash /boot/boot
-			ln -snf boot-versions/$old_boot_hash /boot/boot-alt
-			umount /boot
-		fi
 	fi
 
-	# check that /versions/run/$current exists; create if needed.
-	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
-		if ! [ "$writable" = "1" ]; then
-			writable_start || return 1
-			writable=1
-		fi
-		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed || return 1
-	fi
-
-	# create 'running' symlink
-
-	# trac #5317: only create symlink if necessary
-	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$current" ]; then
-		if [ "$writable" = "1" ]; then
-			writable_done || return 1
-		fi
-		echo $current
-		return 0
-	fi
-
-	# make symlink
-	if ! [ "$writable" = "1" ]; then
-		writable_start || return 1
-		writable=1
-	fi
-
-	rm -f "$NEWROOT/versions/running" # ignore error
-	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
-	writable_done || return 1
 	echo $current
 	return 0
 }
