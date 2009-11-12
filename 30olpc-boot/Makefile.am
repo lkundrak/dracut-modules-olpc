@@ -1,6 +1,6 @@
 dmoddir = $(DRACUT_MODDIR)
 dist_dmod_SCRIPTS = check_ install_ activate.py upfs.py
-dist_dmod_DATA = python-contents.txt \
+dist_dmod_DATA = python-contents.txt olpc-sd.rules \
 	olpc-boot-premount.sh olpc-boot-prepivot.sh olpc-boot-cmdline.sh
 
 dist_noinst_SCRIPTS = list-python-files.sh
