@@ -5,6 +5,8 @@ if [ -z "$root" ]; then
 	umount /ofw
 
 	# XXX: unpartitioned XO-1.5 not supported
+	# XXX: unpartitioned USB not supported
+	# XXX: might get confused if more than 1 USB disk is plugged in
 	#
 	# FIXME: teach dracut about mtd mounts so that we can avoid using the
 	# mtdblock driver
@@ -17,6 +19,7 @@ if [ -z "$root" ]; then
 		/pci/sd@c/disk@1:*) root="/dev/disk/olpc/intp2" ;; # XO-1.5 internal SD
 		/pci/sd@c/disk@2:*) root="/dev/disk/olpc/extp2" ;; # XO-1.5 external SD
 		/pci/nandflash@c:*) root="/dev/mtdblock0" ;; # XO-1 internal NAND
+		/pci/usb@*) root="/dev/sda2" ;; # external USB, assume partitioned
 	esac
 fi
 
