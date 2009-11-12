@@ -1,0 +1,15 @@
+# udev rules file for persistent SD device node naming
+# copied from olpc-utils. we duplicate this here as we don't want to add 
+# a dracut-modules-olpc dependency on olpc-utils, because in future we want
+# to build the initramfs on the build box (and olpc-utils is only suitable for
+# an XO)
+SUBSYSTEM!="block", GOTO="olpc_sd_end"
+
+KERNEL=="mmcblk?", KERNELS=="mmc0", SYMLINK+="disk/olpc/int"
+KERNEL=="mmcblk?p?", KERNELS=="mmc0", SYMLINK+="disk/olpc/intp%n"
+
+KERNEL=="mmcblk?", KERNELS=="mmc1", SYMLINK+="disk/olpc/ext"
+KERNEL=="mmcblk?p?", KERNELS=="mmc1", SYMLINK+="disk/olpc/extp%n"
+
+LABEL="olpc_sd_end"
+

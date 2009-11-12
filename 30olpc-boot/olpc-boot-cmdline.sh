@@ -14,8 +14,8 @@ if [ -z "$root" ]; then
 	# /pci/nandflash@c:root,\boot\vmlinuz//jffs2-file-system:\boot\vmlinuz
 	# becomes mtd:root
 	case $bootpath in
-		/pci/sd@c/disk@1:*) root="/dev/mmcblk0p2" ;; # XO-1.5 internal SD
-		/pci/sd@c/disk@2:*) root="/dev/mmcblk1p2" ;; # XO-1.5 external SD
+		/pci/sd@c/disk@1:*) root="/dev/disk/olpc/intp2" ;; # XO-1.5 internal SD
+		/pci/sd@c/disk@2:*) root="/dev/disk/olpc/extp2" ;; # XO-1.5 external SD
 		/pci/nandflash@c:*) root="/dev/mtdblock0" ;; # XO-1 internal NAND
 	esac
 fi
