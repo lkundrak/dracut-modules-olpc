@@ -104,7 +104,7 @@ frob_symlink() {
 		retcode=$?
 	fi
 
-	[ $retcode = 0 ] || return retcode
+	[ $retcode = 0 ] || return $retcode
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
