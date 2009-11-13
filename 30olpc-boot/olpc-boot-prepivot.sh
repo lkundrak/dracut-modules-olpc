@@ -35,7 +35,7 @@ get_boot_device() {
 	local tmp
 
 	case $root in
-	block:/dev/mmcblk?p?)
+	block:/dev/mmcblk?p? | block:/dev/disk/olpc/*p?)
 		tmp=${root#block:}
 		tmp=${tmp%p?}
 		echo ${tmp}p1
@@ -145,16 +145,16 @@ frob_symlink() {
 _frob_symlink_partitioned() {
 	local target dir current alt
 
-	[ -h /boot/boot -a -d /boot/boot-versions ] || return 0
+	[ -h /bootpart/boot -a -d /bootpart/boot-versions ] || return 0
 
-	# read hash from /boot/boot symlink
-	target=$(readlink /boot/boot)
+	# read hash from /bootpart/boot symlink
+	target=$(readlink /bootpart/boot)
 	dir=$(dirname "$target")
 	[ "$dir" != "boot-versions" ] && return 1
 	current=$(basename $target)
 
-	if [ "$olpc_boot_backup" = "1" -a -h /boot/boot/alt ]; then
-		target=$(readlink /boot/boot/alt)
+	if [ "$olpc_boot_backup" = "1" -a -h /bootpart/boot/alt ]; then
+		target=$(readlink /bootpart/boot/alt)
 		dir=$(dirname "$target")
 		[ "$dir" != ".." ] && return 1
 		alt=$(basename "$target")
@@ -162,10 +162,10 @@ _frob_symlink_partitioned() {
 		sync || return 1 # superstition
 
 		# make alternate link in new configuration point to the non-backup OS
-		rewrite_symlink ../"$current" /boot/boot/alt/alt || return 1
+		rewrite_symlink ../"$current" /bootpart/boot/alt/alt || return 1
 
 		# update /boot to point at alternate OS
-		rewrite_symlink boot-versions/$alt /boot || return 1
+		rewrite_symlink boot-versions/$alt /bootpart/boot || return 1
 
 		current=$alt
 	fi
@@ -175,20 +175,20 @@ _frob_symlink_partitioned() {
 }
 
 frob_symlink_partitioned() {
-	# wrap _frob_symlink_partitioned so that we're sure to unmount /boot
+	# wrap _frob_symlink_partitioned so that we're sure to unmount /bootpart
 	# on all the exit paths
 	local bdev retcode
 
 	bdev=$(get_boot_device)
 	[ $? != 0 ] && return 1
 
-	mkdir -p /boot
-	mount $bdev /boot || return 1
+	mkdir -p /bootpart
+	mount $bdev /bootpart || return 1
 
 	_frob_symlink_partitioned
 	retcode=$?
 
-	umount /boot
+	umount /bootpart
 	return $retcode
 }
 
