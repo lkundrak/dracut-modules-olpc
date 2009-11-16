@@ -29,6 +29,3 @@ if [ -z "$root" ]; then
 	esac
 fi
 
-# disable atime on root mount, #9455
-rflags="noatime"
-
