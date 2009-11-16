@@ -16,8 +16,14 @@ if [ -z "$root" ]; then
 	# /pci/nandflash@c:root,\boot\vmlinuz//jffs2-file-system:\boot\vmlinuz
 	# becomes mtd:root
 	case $bootpath in
-		/pci/sd@c/disk@1:*) root="/dev/disk/olpc/intp2" ;; # XO-1.5 internal SD
-		/pci/sd@c/disk@2:*) root="/dev/disk/olpc/extp2" ;; # XO-1.5 external SD
+		/pci/sd@c/disk@?:*) # XO-1.5 SD card
+			# extract the bus number (from disk@NUM) and decrement by 1 to
+			# correlate with linux device
+			tmp=${bootpath#/pci/sd@c/disk@}
+			tmp=${tmp%%:*}
+			((tmp--))
+			root="/dev/disk/mmc/mmc${tmp}p2"
+			;;
 		/pci/nandflash@c:*) root="/dev/mtdblock0" ;; # XO-1 internal NAND
 		/pci/usb@*) root="/dev/sda2" ;; # external USB, assume partitioned
 	esac

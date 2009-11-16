@@ -1,15 +1,12 @@
-# udev rules file for persistent SD device node naming
-# copied from olpc-utils. we duplicate this here as we don't want to add 
-# a dracut-modules-olpc dependency on olpc-utils, because in future we want
-# to build the initramfs on the build box (and olpc-utils is only suitable for
-# an XO)
-SUBSYSTEM!="block", GOTO="olpc_sd_end"
+# udev rules to assign persistent names to OLPC XO-1.5 SD cards and their
+# partitions, based on the MMC bus where they reside
+#
+# mmcblkXpY names cannot be used to reliably identify internal vs external
+# cards, because the "X" component is generated incrementally, regardless of
+# backing MMC bus number.
 
-KERNEL=="mmcblk?", KERNELS=="mmc0", SYMLINK+="disk/olpc/int"
-KERNEL=="mmcblk?p?", KERNELS=="mmc0", SYMLINK+="disk/olpc/intp%n"
-
-KERNEL=="mmcblk?", KERNELS=="mmc1", SYMLINK+="disk/olpc/ext"
-KERNEL=="mmcblk?p?", KERNELS=="mmc1", SYMLINK+="disk/olpc/extp%n"
-
-LABEL="olpc_sd_end"
+SUBSYSTEM=="mmc_host", KERNEL=="mmc[0-9]", ENV{MMC_BUSNO}="%n"
+SUBSYSTEM=="mmc", KERNEL=="mmc[0-9]:*", IMPORT{parent}="MMC_BUSNO"
+SUBSYSTEM=="block", KERNEL=="mmcblk?", IMPORT{parent}="MMC_BUSNO", SYMLINK+="disk/mmc/mmc$env{MMC_BUSNO}"
+SUBSYSTEM=="block", KERNEL=="mmcblk?p?", IMPORT{parent}="MMC_BUSNO", SYMLINK+="disk/mmc/mmc$env{MMC_BUSNO}p%n"
 

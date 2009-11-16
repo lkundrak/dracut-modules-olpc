@@ -35,7 +35,7 @@ get_boot_device() {
 	local tmp
 
 	case $root in
-	block:/dev/mmcblk?p? | block:/dev/disk/olpc/*p?)
+	block:/dev/mmcblk?p? | block:/dev/disk/mmc/mmc?p?)
 		tmp=${root#block:}
 		tmp=${tmp%p?}
 		echo ${tmp}p1
