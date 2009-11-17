@@ -106,6 +106,9 @@ frob_symlink() {
 
 	[ $retcode = 0 ] || return $retcode
 
+	# empty return value means filesystem is not versioned
+	[ -n "$current" ] || return 0
+
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
 		if ! [ "$writable" = "1" ]; then
