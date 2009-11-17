@@ -21,7 +21,7 @@ if [ -z "$root" ]; then
 			# correlate with linux device
 			tmp=${bootpath#/pci/sd@c/disk@}
 			tmp=${tmp%%:*}
-			((tmp--))
+			tmp=$((tmp - 1))
 			root="/dev/disk/mmc/mmc${tmp}p2"
 			;;
 		/pci/nandflash@c:*) root="/dev/mtdblock0" ;; # XO-1 internal NAND
