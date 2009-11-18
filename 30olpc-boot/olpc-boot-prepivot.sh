@@ -285,9 +285,6 @@ current=$(frob_symlink)
 
 if [ -n "$current" ]; then
 	newroot=$NEWROOT/versions/run/$current
-	# launch pretty boot asap
-	# this covers the "upgradable" filesytem layout with /versions etc.
-	start_bootanim $newroot
 
 	# use a little magic to turn our $newroot point into an actual mount
 	# point. this is needed because switch_root only works with mount
@@ -297,6 +294,12 @@ if [ -n "$current" ]; then
 	NEWROOT=/vsysroot
 	mkdir -p $NEWROOT || die
 	mount --bind $newroot $NEWROOT || die
+
+	# launch pretty boot
+	# this covers the "upgradable" filesytem layout with /versions etc.
+	# we have to do this after sorting out the bind mount, if we run it on
+	# $oldroot then the $oldroot unmount will fail below (not exactly sure why)
+	start_bootanim $NEWROOT
 
 	# create some bind mounts
 	# we do this with the original root writable, because bind mounting copies
