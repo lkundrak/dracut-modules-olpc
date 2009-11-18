@@ -289,22 +289,30 @@ if [ -n "$current" ]; then
 	# this covers the "upgradable" filesytem layout with /versions etc.
 	start_bootanim $newroot
 
-	# okay, do the boot!
+	# use a little magic to turn our $newroot point into an actual mount
+	# point. this is needed because switch_root only works with mount
+	# points, and more importantly it lets us remount / read-only during
+	# shutdown (#9629)
+	oldroot=$NEWROOT
+	NEWROOT=/vsysroot
+	mkdir -p $NEWROOT || die
+	mount --bind $newroot $NEWROOT || die
+
 	# create some bind mounts
-	# (do this after making root writable, because newer kernels will
-	#  otherwise end up with ro bind mounts against the writable root)
-	writable_start || die
+	# we do this with the original root writable, because bind mounting copies
+	# over the mount options.
+	mount -o remount,rw $oldroot || die
 	for frag in home security versions; do
 		# ignore failures here: a debian installation (say) may not have
 		# these dirs.
-		mount --bind "$NEWROOT/$frag" "$NEWROOT/versions/run/$current/$frag"
+		mount --bind "$oldroot/$frag" "$NEWROOT/$frag"
 	done
 
-	NEWROOT="$newroot"
-	# Note: for the "upgradable case", we leave root mounted rw (as has always
-	# been done for OLPC) before entering the real system. This is because
-	# when you're chrooted in the real system, you can't
-	# "mount -o remount,rw /" because / isn't a real mount.
+	# now we don't need the old root for anything else
+	umount $oldroot || die
+
+	# at this point, the /vsysroot mount is read-only.
+	# distro init scripts will remount it read-write early on.
 fi
 
 unset writable_start writable_done
