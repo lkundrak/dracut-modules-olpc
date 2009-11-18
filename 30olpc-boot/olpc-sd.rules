@@ -5,8 +5,12 @@
 # cards, because the "X" component is generated incrementally, regardless of
 # backing MMC bus number.
 
-SUBSYSTEM=="mmc_host", KERNEL=="mmc[0-9]", ENV{MMC_BUSNO}="%n"
-SUBSYSTEM=="mmc", KERNEL=="mmc[0-9]:*", IMPORT{parent}="MMC_BUSNO"
-SUBSYSTEM=="block", KERNEL=="mmcblk?", IMPORT{parent}="MMC_BUSNO", SYMLINK+="disk/mmc/mmc$env{MMC_BUSNO}"
-SUBSYSTEM=="block", KERNEL=="mmcblk?p?", IMPORT{parent}="MMC_BUSNO", SYMLINK+="disk/mmc/mmc$env{MMC_BUSNO}p%n"
+SUBSYSTEM=="block", KERNEL=="mmcblk?", KERNELS=="mmc0", SYMLINK+="disk/mmc/mmc0"
+SUBSYSTEM=="block", KERNEL=="mmcblk?p?", KERNELS=="mmc0", SYMLINK+="disk/mmc/mmc0p%n"
+
+SUBSYSTEM=="block", KERNEL=="mmcblk?", KERNELS=="mmc1", SYMLINK+="disk/mmc/mmc1"
+SUBSYSTEM=="block", KERNEL=="mmcblk?p?", KERNELS=="mmc1", SYMLINK+="disk/mmc/mmc1p%n"
+
+SUBSYSTEM=="block", KERNEL=="mmcblk?", KERNELS=="mmc2", SYMLINK+="disk/mmc/mmc2"
+SUBSYSTEM=="block", KERNEL=="mmcblk?p?", KERNELS=="mmc2", SYMLINK+="disk/mmc/mmc2p%n"
 
