@@ -14,10 +14,10 @@ die() {
 
 # do we have a separate boot partition?
 is_partitioned() {
-	# if root device ends in p[0-9] then we're on a partitioned system
 	# XXX: does this need improving?
 	case $root in
-		*p[0-9]) return 0 ;;
+		*p[0-9]) return 0 ;; # MMC e.g. mmcblk0p2
+		*sd?[0-9]) return 0 ;; # USB e.g. sda2
 		*) return 1 ;;
 	esac
 }
@@ -39,6 +39,12 @@ get_boot_device() {
 		tmp=${root#block:}
 		tmp=${tmp%p?}
 		echo ${tmp}p1
+		return 0
+		;;
+	block:/dev/sd??)
+		tmp=${root#block:}
+		tmp=${tmp%?}
+		echo ${tmp}1
 		return 0
 		;;
 	esac
