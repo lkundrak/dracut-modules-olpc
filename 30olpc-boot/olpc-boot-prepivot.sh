@@ -252,10 +252,15 @@ start_bootanim() {
 
 	mount -t proc proc "$1"/proc
 	mount -t sysfs syfs "$1"/sys
-    # XXX might want to bind-mount /home here to allow early
-    # bootanim customization
 
-	writable_start || die
+	# we need certain dev nodes (created below, if needed). we could just
+	# remount the root partition read-write and put them on disk, but an
+	# easier option is just to put our "udev" mount there insetad
+
+	mount --bind /dev "$1"/dev
+	# XXX might want to bind-mount /home here to allow early
+	# bootanim customization
+
 	ensure_dev "$1" fb0 c 29 0
 	ensure_dev "$1" console c 5 1
 	ensure_dev "$1" tty1 c 4 1
@@ -263,7 +268,7 @@ start_bootanim() {
 	chroot "$1" /usr/sbin/boot-anim-start
 	umount "$1"/proc
 	umount "$1"/sys
-	writable_done || die
+	umount "$1"/dev
 }
 
 # XXX mount gives a warning in writable_start() if there's no fstab
