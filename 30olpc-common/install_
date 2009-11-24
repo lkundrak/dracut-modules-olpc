@@ -1,0 +1,3 @@
+#!/bin/bash
+mkdir -p "$initdir"/etc/udev/rules.d
+inst "$moddir"/olpc-sd.rules /etc/udev/rules.d/10-olpc-sd.rules

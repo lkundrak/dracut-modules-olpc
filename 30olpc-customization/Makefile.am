@@ -1,7 +1,5 @@
-dmoddir = $(DRACUT_MODDIR)/30olpc-boot
-dist_dmod_SCRIPTS = check_ install_ activate.py upfs.py
-dist_dmod_DATA = olpc-boot-premount.sh olpc-boot-prepivot.sh \
-	olpc-boot-cmdline.sh
+dmoddir = $(DRACUT_MODDIR)/30olpc-customization
+dist_dmod_SCRIPTS = check_ install_ process.py unpack.py
 
 # Ugh. automake doesnt like files called "install" or "check" because it
 # provides default rules with those names.

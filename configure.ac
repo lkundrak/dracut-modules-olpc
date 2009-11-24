@@ -19,12 +19,22 @@ AC_SUBST(PY_CFLAGS)
 AC_SUBST(PY_LDFLAGS)
 AC_SUBST(PY_LIBS)
 
-DRACUT_MODDIR="$datadir/dracut/modules.d/30olpc-boot"
+DRACUT_MODDIR="$datadir/dracut/modules.d"
 AC_SUBST(DRACUT_MODDIR)
 
 DRACUT_LIBDIR="$libdir/dracut-modules-olpc"
 AC_SUBST(DRACUT_LIBDIR)
 
-AC_CONFIG_FILES([dracut-modules-olpc.spec Makefile 30olpc-boot/Makefile cprl/Makefile ipv6util/Makefile act-gui/Makefile act-gui/images/Makefile])
+AC_CONFIG_FILES([
+	dracut-modules-olpc.spec
+	Makefile
+	30olpc-common/Makefile
+	30olpc-python/Makefile
+	30olpc-boot/Makefile
+	30olpc-customization/Makefile
+	cprl/Makefile
+	ipv6util/Makefile
+	act-gui/Makefile
+	act-gui/images/Makefile])
 AC_OUTPUT
 

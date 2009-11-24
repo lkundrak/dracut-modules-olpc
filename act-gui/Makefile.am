@@ -1,5 +1,5 @@
 SUBDIRS = images
-dmoddir = $(DRACUT_MODDIR)
+dmoddir = $(DRACUT_MODDIR)/30olpc-boot
 dist_dmod_SCRIPTS = olpc_act_gui_server.py
 dist_dmod_DATA = olpc_act_gui_client.py
 
