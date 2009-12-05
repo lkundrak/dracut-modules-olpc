@@ -81,7 +81,7 @@ rewrite_symlink()
 {
 	local retcode
 	local dir=$(dirname "$2")
-	local tmpdir=$(mktemp -d --tmpdir "$dir" sym.XXXXXXXXXX)
+	local tmpdir=$(mktemp -d --tmpdir="$dir" sym.XXXXXXXXXX)
 	local tmplnk="$tmpdir"/symlink
 
 	ln -s "$1" "$tmplnk"

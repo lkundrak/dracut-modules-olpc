@@ -22,6 +22,7 @@ dracut_install basename
 dracut_install ip
 dracut_install iwconfig
 dracut_install iwlist
+dracut_install mktemp
 
 # mount points used by initramfs code
 mkdir -p "$initdir"/ofw
