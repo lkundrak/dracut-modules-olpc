@@ -91,7 +91,7 @@ rewrite_symlink()
 		return $retcode
 	fi
 
-	mv -f "$tmplnk" "$2"
+	mv -f -T "$tmplnk" "$2"
 	retcode=$?
 	rm -rf "$tmpdir"
 	return $retcode
