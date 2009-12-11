@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from __future__ import division, with_statement
 import os
+import sys
 from pyvt import *
 
 BLINK_TIME_MS = 500 # half a blink cycle time, in milliseconds
@@ -137,7 +138,7 @@ def process_command(fb, cmd):
             fb.draw(xicon - (fb[icon].width // 2), yicon, fb[icon])
     else:
         # complain
-        print "Unknown GUI command:", cmd
+        print >> sys.stderr, "Unknown GUI command:", cmd
 
 def server_loop(s, fb):
     import socket

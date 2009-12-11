@@ -93,7 +93,7 @@ def select_mesh_channel (channel):
     set_addresses_mesh()
 
 def select_bss (ssid):
-    print "attempting connection to open BSS", ssid
+    print >> sys.stderr, "attempting connection to open BSS", ssid
     check_call(['/sbin/ip','link','set','dev','eth0','up']) # rely on ipv6 autoconfig
     check_call(['/sbin/iwconfig','eth0','mode','managed','essid',ssid])
 
@@ -104,14 +104,14 @@ def select_bss (ssid):
                                   stdout=subprocess.PIPE).communicate()[0]
         lines = output.split("\n")
         if len(lines) < 2:
-            print "bad iwconfig output?"
+            print >> sys.stderr, "bad iwconfig output?"
             return False
 
         ssidpos = lines[0].index("ESSID:")
         iw_ssid = lines[0][ssidpos + 6:].strip()
         if iw_ssid != '"' + ssid + '"':
             if iw_ssid != '""':
-                print "unexpected ESSID value:", iw_ssid
+                print >> sys.stderr, "unexpected ESSID value:", iw_ssid
             continue
 
         appos = lines[1].find("Access Point: ")
@@ -119,7 +119,7 @@ def select_bss (ssid):
             continue
         iw_ap = lines[1][appos+14:].strip()
         if iw_ap[0].isdigit():
-            print "connected!"
+            print >> sys.stderr, "connected!"
             set_addresses_bss()
             return True
 
@@ -305,7 +305,7 @@ def activate (serial_num, uuid):
             net_init()
 
             candidates = find_open_bss_nets()
-            print "open BSS candidates:", candidates
+            print >> sys.stderr, "open BSS candidates:", candidates
             for ssid in candidates:
                 keylist = try_bss_network(ssid, serial_num)
                 if not keylist:
