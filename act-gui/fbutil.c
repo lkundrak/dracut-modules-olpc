@@ -17,7 +17,7 @@ struct _put_ops {
     int (*init)(void **state, struct image *image);
     /* write 'n' bytes starting at 'dest' from offset 'src-image->pixel_data'
      * of the source image. */
-    int (*copy)(void *state, void *dest, const void *src, size_t n);
+    int (*draw)(void *state, unsigned char *dest, const unsigned char *src, size_t n, int bpp);
     /* deallocate & clean up 'state'. */
     int (*finish)(void *state);
 };
@@ -37,9 +37,10 @@ int fb_open(char *devname, struct fbinfo *fbi) {
     /* Get variable screen information */
     st = ioctl(fbi->fd, FBIOGET_VSCREENINFO, &fbi->vinfo);
     assert(!st);
-    assert(fbi->vinfo.bits_per_pixel == 16);
+    assert(fbi->vinfo.bits_per_pixel == 16 || fbi->vinfo.bits_per_pixel == 32);
     assert(!fbi->vinfo.grayscale);
     /* 565 color */
+#if 0 /* we now support 32bpp too */
     assert(fbi->vinfo.red.offset == 11);
     assert(fbi->vinfo.red.length == 5);
     assert(!fbi->vinfo.red.msb_right);
@@ -50,6 +51,7 @@ int fb_open(char *devname, struct fbinfo *fbi) {
     assert(fbi->vinfo.blue.length == 5);
     assert(!fbi->vinfo.blue.msb_right);
     assert(fbi->vinfo.transp.length == 0); /* no alpha */
+#endif
     /* Figure out the size of the screen in bytes */
     screensize =
 	fbi->vinfo.xres * fbi->vinfo.yres * fbi->vinfo.bits_per_pixel / 8;
@@ -79,13 +81,14 @@ void fb_put(struct fbinfo *fbi, int xoff, int yoff, struct image *image) {
 	x1 = image->width; sx1 = x1 + xoff;
 	if (sx0 < 0) { x0 -= sx0; sx0 = 0; }
 	if (sx1 > fbi->vinfo.xres) { int diff = sx1 - fbi->vinfo.xres; x1 -= diff; sx1 -= diff; }
-	st = ops->copy
+	st = ops->draw
 	    (put_state,
 	     fbi->map +
 	     (sx0 + fbi->vinfo.xoffset) * (fbi->vinfo.bits_per_pixel/8) +
 	     (sy + fbi->vinfo.yoffset) * fbi->finfo.line_length,
-	     image->pixel_data + x0 + y * image->width,
-	     sizeof(uint16_t) * (x1 - x0));
+	     (unsigned char *) (image->pixel_data + x0 + y * image->width),
+	     sizeof(uint16_t) * (x1 - x0),
+	     fbi->vinfo.bits_per_pixel);
 	if (st) break; /* error, bail. */
     }
     ops->finish(put_state); /* deallocate; clean up. */
@@ -103,8 +106,16 @@ void fb_close(struct fbinfo *fbi) {
 static int _ps_init(void **state, struct image *image) {
     return 0; /* no-op */
 }
-static int _ps_copy(void *state, void *dest, const void *src, size_t n) {
-    memcpy(dest, src, n); /* simply wrap memcpy */
+static int _ps_draw(void *state, unsigned char *dest, const unsigned char *src, size_t n, int bpp) {
+    if (bpp == 16) {
+        memcpy(dest, src, n); /* simply wrap memcpy */
+    } else {
+        int i;
+        uint32_t *fbmem = (uint32_t *) dest;
+        uint16_t *imgmem = (uint16_t *) src;
+        for (i = 0; i < (n / 2); i++)
+            fbmem[i] = TOARGB(imgmem[i]);
+    }
     return 0; /* always successful. */
 }
 static int _ps_finish(void *state) {
@@ -112,14 +123,14 @@ static int _ps_finish(void *state) {
 }
 struct _put_ops _std_ops = {
     .init = _ps_init,
-    .copy = _ps_copy,
+    .draw = _ps_draw,
     .finish=_ps_finish,
 };
 
 /* ------- operations on compressed images (zlib, yay!) -------- */
 struct _z_state {
     z_stream strm; /* zlib context */
-    const void *lastread; /* allows copy to 'skip ahead' in the image */
+    const unsigned char *lastread; /* allows draw to 'skip ahead' in the image */
 };
 static int _ps_finish_z(void *state); /* forward declaration */
 static int _ps_init_z(void **state, struct image *image) {
@@ -132,7 +143,7 @@ static int _ps_init_z(void **state, struct image *image) {
     image_zsize = ((unsigned int *) image->pixel_data)[0];
     zs->strm.next_in = (void*) &(((unsigned int *) image->pixel_data)[1]);
     zs->strm.avail_in = image_zsize;
-    zs->lastread = image->pixel_data; /* virtual stream pointer */
+    zs->lastread = (unsigned char *) image->pixel_data; /* virtual stream pointer */
     st = inflateInit(&(zs->strm));
     if (st != Z_OK) {
 	/* yuck, clean up */
@@ -141,7 +152,7 @@ static int _ps_init_z(void **state, struct image *image) {
     }
     return 0; /* success */
 }
-static int _ps_copy_z(void *state, void *dest, const void *src, size_t n) {
+static int _ps_draw_z(void *state, unsigned char *dest, const unsigned char *src, size_t n, int bpp) {
     struct _z_state *zs = (struct _z_state *) state;
     char buf[n]; /* temporary storage for decompressed image data */
     int st;
@@ -169,8 +180,17 @@ static int _ps_copy_z(void *state, void *dest, const void *src, size_t n) {
     else if (st != Z_OK) return 1; /* error */
     /* update zs->lastread */
     zs->lastread = src + n;
+
     /* finally, blit to screen */
-    memcpy(dest, buf, n);
+    if (bpp == 16) {
+        memcpy(dest, buf, n);
+    } else {
+        int i;
+        uint32_t *fbmem = (uint32_t *) dest;
+        uint16_t *imgmem = (uint16_t *) buf;
+        for (i = 0; i < (n / 2); i++)
+            fbmem[i] = TOARGB(imgmem[i]);
+    }
     return 0; /* success. */
 }
 static int _ps_finish_z(void *state) {
@@ -182,6 +202,6 @@ static int _ps_finish_z(void *state) {
 
 struct _put_ops _z_ops = {
     .init = _ps_init_z,
-    .copy = _ps_copy_z,
+    .draw = _ps_draw_z,
     .finish=_ps_finish_z,
 };

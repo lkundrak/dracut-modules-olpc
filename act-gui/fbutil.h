@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <linux/fb.h>
 
+/* convert from 565 to ARGB */
+#define TOARGB(s)  (0xff070307 | (((s) >> 11) << 19) | ((s & 0x07e0) << 5) | ((s & 0x001f) << 3))
+
 struct fbinfo {
     int fd;
     void *map;
