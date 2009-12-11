@@ -14,16 +14,20 @@ from olpc_act_gui_client import send
 SD_MNT = '/mnt/sd'
 USB_MNT = '/mnt/usb'
 
-def blk_mounted(device, mnt, fstype='msdos'):
+def blk_mounted(device, mnt, fstype=None):
     """Mount a block device."""
     class blk_mgr(object):
         def __enter__(self):
-            check_call(['/bin/mount','-t',fstype,'-o','ro',device,mnt])
+            cmd = ['/bin/mount']
+            if fstype is not None:
+                cmd.extend(['-t', fstype])
+            cmd.extend(['-o', 'ro', device, mnt])
+            check_call(cmd)
         def __exit__(self, type, value, traceback):
             call(['/bin/umount',mnt])
     return blk_mgr()
 
-def try_blk(device, mnt, fstype='msdos'):
+def try_blk(device, mnt, fstype=None):
     """Try to mount a block device and read keylist from it."""
     try:
         with blk_mounted(device, mnt, fstype):
