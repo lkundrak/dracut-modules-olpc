@@ -51,6 +51,9 @@ def set_addresses_bss ():
     # should be able to ping 172.18.0.1 after this point.
     # the IPv4 address is a little hacky, prefer ipv6
 
+def mesh_device_exists ():
+    return os.path.exists('/sys/class/net/msh0')
+
 def set_addresses_mesh ():
     check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
     check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
@@ -315,20 +318,21 @@ def activate (serial_num, uuid):
                 except:
                     continue
 
-            for chan in [1, 6, 11, 1, 6, 11]:
-                send('wireless state '+str(chan))
-                keylist = try_mesh_network(chan, serial_num)
-                if keylist:
-                    send('wireless success')
-                    if check_stolen(keylist):
-                        return None # machine's been reported STOLEN!
-                    try:
-                        # return minimized lease
-                        return find_lease(serial_num, uuid, keylist)
-                    except:
-                        continue
-            else:
-                send('wireless fail')
+            if mesh_device_exists():
+                for chan in [1, 6, 11, 1, 6, 11]:
+                    send('wireless state '+str(chan))
+                    keylist = try_mesh_network(chan, serial_num)
+                    if keylist:
+                        send('wireless success')
+                        if check_stolen(keylist):
+                            return None # machine's been reported STOLEN!
+                        try:
+                            # return minimized lease
+                            return find_lease(serial_num, uuid, keylist)
+                        except:
+                            continue
+                else:
+                    send('wireless fail')
         except:
             pass # networking is borked
         # we lose. activation failed.
