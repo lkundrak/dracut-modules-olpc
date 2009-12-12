@@ -52,14 +52,35 @@ get_boot_device() {
 	return 1
 }
 
+mount_boot() {
+	local bdev=$(get_boot_device)
+	[ $? != 0 ] && return 1
+	mkdir -p /bootpart
+	mount $bdev /bootpart
+}
+
+unmount_boot() {
+	umount /bootpart
+}
+
+erase_lease() {
+	if is_partitioned; then
+		mount_boot
+		rm -f /bootpart/security/lease.sig
+		unmount_boot
+	else
+		writable_start
+		rm -f "$NEWROOT"/security/lease.sig
+		writable_done
+	fi
+}
+
 check_stolen() {
 	# XXX: we should provide some way to delete the 'stolen' identifier to
 	# XXX: recover the machine.
 	if [ -e "$NEWROOT/.private/stolen" ]; then
 		# this machine is stolen!  delete activation lease
-		writable_start
-		rm -f "$NEWROOT"/security/lease.sig
-		writable_done
+		erase_lease
 		sync
 		poweroff -f || die
 	fi
@@ -186,18 +207,14 @@ _frob_symlink_partitioned() {
 frob_symlink_partitioned() {
 	# wrap _frob_symlink_partitioned so that we're sure to unmount /bootpart
 	# on all the exit paths
-	local bdev retcode
+	local retcode
 
-	bdev=$(get_boot_device)
-	[ $? != 0 ] && return 1
-
-	mkdir -p /bootpart
-	mount $bdev /bootpart || return 1
+	mount_boot || return 1
 
 	_frob_symlink_partitioned
 	retcode=$?
 
-	umount /bootpart
+	unmount_boot
 	return $retcode
 }
 
@@ -280,10 +297,17 @@ check_stolen
 # if we're activating, we just received a lease that we should write to disk
 # sooner rather than later
 if [ -n "$olpc_write_lease" ]; then
-	writable_start || die
-	mkdir -p $NEWROOT/security || die
-	echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
-	writable_done || die
+	if is_partitioned; then
+		mount_boot || die
+		mkdir -p /bootpart/security || die
+		echo "$olpc_write_lease" > "/bootpart/security/lease.sig" || die
+		unmount_boot || die
+	else
+		writable_start || die
+		mkdir -p $NEWROOT/security || die
+		echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
+		writable_done || die
+	fi
 fi
 
 
@@ -316,11 +340,19 @@ if [ -n "$current" ]; then
 	# we do this with the original root writable, because bind mounting copies
 	# over the mount options.
 	mount -o remount,rw $oldroot || die
-	for frag in home security versions; do
+	for frag in home versions; do
 		# ignore failures here: a debian installation (say) may not have
 		# these dirs.
 		mount --bind "$oldroot/$frag" "$NEWROOT/$frag"
 	done
+
+	if is_partitioned; then
+		mount_boot
+		mount --bind /bootpart/security "$NEWROOT/security"
+		unmount_boot
+	else
+		mount --bind "$oldroot/security" "$NEWROOT/security"
+	fi
 
 	# now we don't need the old root for anything else
 	umount $oldroot || die
