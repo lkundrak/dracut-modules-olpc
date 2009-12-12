@@ -13,6 +13,7 @@ from olpc_act_gui_client import send
 
 SD_MNT = '/mnt/sd'
 USB_MNT = '/mnt/usb'
+bootpath = ''
 
 def blk_mounted(device, mnt, fstype=None):
     """Mount a block device."""
@@ -85,6 +86,29 @@ def sd_init():
     if _sd_first:
         _sd_first = False
         time.sleep(3) # CAFE takes a bit to wake up
+
+def sd_get_disk():
+    """Return device name of SD disk"""
+    # e.g. /pci/sd@c/disk@1:\boot\vmlinuz...
+    if bootpath.startswith("/pci/sd@c/disk@") and bootpath[15:16].isdigit():
+        # XO-1.5: determine SD bus number from OFW bootpath, and correlate to
+        # Linux device for external SD card
+        disknum = int(bootpath[15:16])
+
+        if disknum == 3:
+            # XO-1.5 B3 or newer booting from internal SD, so return address
+            # of external SD card (on first mmc bus)
+            return "/dev/disk/mmc/mmc0"
+        elif disknum == 1:
+            # XO-1.5 B2 booting from internal SD, return address of external
+            # SD (2nd mmc bus)
+            return "/dev/disk/mmc/mmc1"
+            # oops, this if branch will also trigger for XO-1.5 B3 when booting
+            # from external SD. but if you're doing that then you arent going
+            # to be expecting to find a lease on SD, I hope.
+
+    # XO-1, or fallback:
+    return "/dev/mmcblk0"
 
 def select_mesh_channel (channel):
     check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
@@ -267,9 +291,10 @@ def activate (serial_num, uuid):
         # check SD card. #####################
         send('SD start')
         sd_init()
-        keylist = try_blk('/dev/mmcblk0p1', SD_MNT)
+        sd_disk = sd_get_disk()
+        keylist = try_blk(sd_disk + 'p1', SD_MNT)
         if not keylist:
-            keylist = try_blk('/dev/mmcblk0', SD_MNT) # unpartitioned SD card
+            keylist = try_blk(sd_disk, SD_MNT) # unpartitioned SD card
         if keylist:
             send('SD success')
             try:
@@ -347,15 +372,17 @@ def activate (serial_num, uuid):
     # XXX:  "found the device but it didn't have a key for you"
 
 def main():
+    global bootpath
     # program to find lease and print it to stdout
 
     if len(sys.argv) != 3:
         print >> sys.stderr, "Usage: %s SN UUID" % sys.argv[0]
         sys.exit(1)
 
-    # read extra deployment keys
+    # read extra deployment keys and bootpath
     check_call(['/bin/mount','-t','promfs','promfs','/ofw'])
     import bitfrost.leases.keys
+    bootpath = open('/ofw/chosen/bootpath').read().rstrip("\n\0")
     check_call(['/bin/umount','/ofw'])
 
     ret = activate(sys.argv[1], sys.argv[2])
