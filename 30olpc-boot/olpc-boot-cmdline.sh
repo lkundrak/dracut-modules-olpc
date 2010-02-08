@@ -24,7 +24,11 @@ if [ -z "$root" ]; then
 			tmp=$((tmp - 1))
 			root="/dev/disk/mmc/mmc${tmp}p2"
 			;;
-		/pci/nandflash@c:*) root="/dev/mtdblock0" ;; # XO-1 internal NAND
+		/pci/nandflash@c:*)
+			# XO-1 internal NAND
+			root="/dev/mtdblock0"
+			fstype="jffs2"
+			;;
 		/pci/usb@*) root="/dev/sda2" ;; # external USB, assume partitioned
 	esac
 fi
