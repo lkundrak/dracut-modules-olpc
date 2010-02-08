@@ -44,12 +44,15 @@ def lease_from_file(fname, serial_num):
     fh = open(fname, 'r')
     fc = fh.read()
     fh.close()
+    print >> sys.stderr, "lease.sig successfully read."
     return fc
 
 def try_blk(device, mnt, serial_num, fstype=None):
     """Try to mount a block device and read keylist from it."""
     try:
+        print >> sys.stderr, "Trying " + device + "...",
         with blk_mounted(device, mnt, fstype):
+            print >> sys.stderr, "mounted...",
             return lease_from_file(os.path.join(mnt,'lease.sig'), serial_num)
     except:
         return None
@@ -231,6 +234,7 @@ def usb_init():
     global _usb_first
     # ignore modprobe failures, since older kernels don't have
     # modular usb (trac #7113).
+    print >> sys.stderr, "Loading USB modules..."
     call(['/sbin/modprobe','ohci-hcd'])
     call(['/sbin/modprobe','usb-storage'])
     if _usb_first:
@@ -335,6 +339,7 @@ def activate (serial_num, uuid):
             send('USB success')
             try:
                 # return minimized lease
+                print >> sys.stderr, "Checking lease..."
                 return find_lease(serial_num, uuid, keylist)
             except:
                 send('USB fail')
