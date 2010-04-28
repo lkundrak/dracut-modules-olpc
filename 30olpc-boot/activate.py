@@ -10,6 +10,7 @@ from ipv6util import if_nametoindex
 import subprocess
 from subprocess import check_call, call
 from olpc_act_gui_client import send
+import greplease
 
 SD_MNT = '/mnt/sd'
 USB_MNT = '/mnt/usb'
@@ -28,12 +29,28 @@ def blk_mounted(device, mnt, fstype=None):
             call(['/bin/umount',mnt])
     return blk_mgr()
 
-def try_blk(device, mnt, fstype=None):
+def lease_from_file(fname, serial_num):
+    """Find the appropriate lease in a file that may be
+       a bare lease ("singleton") or a -- perhaps huge --
+       CJSON file.
+    """
+    fh = open(fname, 'r')
+    head = fh.read(5)
+    fh.close()
+    if head == '[1,{"':
+        # Matches the start of a well-formed v1 leases file.
+        # Use greplease.grep() here to handle large lease files
+        return greplease.grep(fname, serial_num)
+    fh = open(fname, 'r')
+    fc = fh.read()
+    fh.close()
+    return fc
+
+def try_blk(device, mnt, serial_num, fstype=None):
     """Try to mount a block device and read keylist from it."""
     try:
         with blk_mounted(device, mnt, fstype):
-            with open(os.path.join(mnt,'lease.sig')) as f:
-                return f.read()
+            return lease_from_file(os.path.join(mnt,'lease.sig'), serial_num)
     except:
         return None
 
@@ -292,9 +309,9 @@ def activate (serial_num, uuid):
         send('SD start')
         sd_init()
         sd_disk = sd_get_disk()
-        keylist = try_blk(sd_disk + 'p1', SD_MNT)
+        keylist = try_blk(sd_disk + 'p1', SD_MNT, serial_num)
         if not keylist:
-            keylist = try_blk(sd_disk, SD_MNT) # unpartitioned SD card
+            keylist = try_blk(sd_disk, SD_MNT, serial_num) # unpartitioned SD card
         if keylist:
             send('SD success')
             try:
@@ -308,12 +325,12 @@ def activate (serial_num, uuid):
         # Check USB stick ####################
         send('USB start')
         usb_init()
-        if not keylist:
-            for suf in ['a1','a','b1','b','c1','c','b1','b','a1','a']:
-                keylist = try_blk('/dev/sd'+suf, USB_MNT)
-                if keylist: break
-                # some USB keys take a while to come up
-                time.sleep(1)
+        keylist = None
+        for suf in ['a1','a','b1','b','c1','c','b1','b','a1','a']:
+            keylist = try_blk('/dev/sd'+suf, USB_MNT, serial_num)
+            if keylist: break
+            # some USB keys take a while to come up
+            time.sleep(1)
         if keylist:
             send('USB success')
             try:

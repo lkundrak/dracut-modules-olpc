@@ -29,7 +29,7 @@ mkdir -p "$initdir"/ofw
 mkdir -p "$initdir"/mnt/usb
 mkdir -p "$initdir"/mnt/sd
 
-for i in activate.py upfs.py olpc_act_gui_server.py; do
+for i in activate.py greplease.py upfs.py olpc_act_gui_server.py; do
 	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
 done
 
