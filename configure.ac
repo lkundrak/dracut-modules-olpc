@@ -26,7 +26,6 @@ DRACUT_LIBDIR="$libdir/dracut-modules-olpc"
 AC_SUBST(DRACUT_LIBDIR)
 
 AC_CONFIG_FILES([
-	dracut-modules-olpc.spec
 	Makefile
 	30olpc-common/Makefile
 	30olpc-python/Makefile
