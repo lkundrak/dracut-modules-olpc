@@ -1,0 +1,12 @@
+# Attempt to pin the internal wifi device with name eth0
+# Some components expect the internal device to have name 'eth0', but this
+# can sometimes change when external networking devices are connected.
+#
+# Note that this file needs to present in both olpc-utils and the initramfs.
+
+# XO-1: the rule is ugly because libertas is not exposed in the device tree?
+SUBSYSTEM=="net", KERNEL=="eth*", SUBSYSTEMS=="usb", ATTRS{product}=="MARVELL Wireless Device", NAME="eth0"
+
+# XO-1.5
+SUBSYSTEM=="net", KERNEL=="eth*", DRIVERS=="libertas_sdio", NAME="eth0"
+
