@@ -1,5 +1,7 @@
 #!/bin/bash
 
+python_libdir=$(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")
+
 # cmdline hook must be installed to run after 10parse-root-opts but before
 # 95parse-block
 inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline.sh
@@ -33,25 +35,25 @@ for i in activate.py greplease.py upfs.py olpc_act_gui_server.py; do
 	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
 done
 
-inst "$moddir"/olpc_act_gui_client.py /usr/lib/python2.6/site-packages/olpc_act_gui_client.py
+inst "$moddir"/olpc_act_gui_client.py "$python_libdir"/olpc_act_gui_client.py
 
 for i in cprl.so pyvt.so pyfb.so ipv6util.so; do
-	inst /usr/lib/dracut-modules-olpc/"$i" /usr/lib/python2.6/site-packages/"$i"
+	inst /usr/lib/dracut-modules-olpc/"$i" "$python_libdir"/"$i"
 done
 
 for i in "$moddir"/act-gui-images/*; do
 	inst "$i" /usr/share/olpc-act-gui/images/$(basename "$i")
 done
 
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/__init__.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/__init__.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/core.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/keys.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/crypto.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/leases/errors.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/__init__.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/json.py
-dracut_install /usr/lib/python2.6/site-packages/bitfrost/util/pyverify.so
+dracut_install "$python_libdir"/bitfrost/__init__.py
+dracut_install "$python_libdir"/bitfrost/leases/__init__.py
+dracut_install "$python_libdir"/bitfrost/leases/core.py
+dracut_install "$python_libdir"/bitfrost/leases/keys.py
+dracut_install "$python_libdir"/bitfrost/leases/crypto.py
+dracut_install "$python_libdir"/bitfrost/leases/errors.py
+dracut_install "$python_libdir"/bitfrost/util/__init__.py
+dracut_install "$python_libdir"/bitfrost/util/json.py
+dracut_install "$python_libdir"/bitfrost/util/pyverify.so
 
 instmods vfat usb_storage usb8xxx libertas libertas_sdio ohci_hcd ehci_hcd sdhci sd
 dracut_install -o /lib/firmware/usb8388.bin
