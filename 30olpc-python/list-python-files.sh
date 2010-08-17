@@ -16,7 +16,7 @@ for line in $lines; do
 	[[ $file =~ ^/usr/share/(doc|man) ]] && continue
 
 	# stuff we don't need
-	[[ $file =~ ^/usr/lib/python2\..*/(idlelib|distutils|compiler|email|xml|multiprocessing|json|ctypes|bsddb|hotshot|logging|wsgiref|curses|plat-linux2|sqlite3)/ ]] && continue
+	[[ $file =~ ^/usr/lib/python2\..*/(idlelib|distutils|compiler|email|xml|multiprocessing|json|ctypes|bsddb|hotshot|logging|wsgiref|curses|plat-linux2|sqlite3|unittest|lib2to3)/ ]] && continue
 
 	# dynload stuff
 	[[ $file =~ ^/usr/lib/python2\..*/lib-dynload/(pyexpat|nismodule|dbm|cryptmodule|bz2|_sqlite3|_hashlib|_cursesmodule|_curses_panel|_ctypes|_bsddb|readline|gdbmmodule|_ssl|unicodedata|_codecs_..)\.so ]] && continue
