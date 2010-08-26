@@ -1,7 +1,5 @@
 #!/bin/bash
 
-python_libdir=$(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")
-
 # cmdline hook must be installed to run after 10parse-root-opts but before
 # 95parse-block
 inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline.sh
@@ -17,13 +15,9 @@ dracut_install sync
 dracut_install sleep
 dracut_install poweroff
 dracut_install umount
-dracut_install /sbin/iwconfig /sbin/ip
 dracut_install readlink
 dracut_install dirname
 dracut_install basename
-dracut_install ip
-dracut_install iwconfig
-dracut_install iwlist
 dracut_install mktemp
 
 # mount points used by initramfs code
@@ -31,33 +25,6 @@ mkdir -p "$initdir"/ofw
 mkdir -p "$initdir"/mnt/usb
 mkdir -p "$initdir"/mnt/sd
 
-for i in activate.py greplease.py olpc_act_gui_server.py; do
-	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
-done
-
-inst "$moddir"/olpc_act_gui_client.py "$python_libdir"/olpc_act_gui_client.py
 inst /usr/lib/dracut-modules-olpc/cprl /usr/libexec/initramfs-olpc/cprl
 
-for i in pyvt.so pyfb.so ipv6util.so; do
-	inst /usr/lib/dracut-modules-olpc/"$i" "$python_libdir"/"$i"
-done
-
-for i in "$moddir"/act-gui-images/*; do
-	inst "$i" /usr/share/olpc-act-gui/images/$(basename "$i")
-done
-
-dracut_install "$python_libdir"/bitfrost/__init__.py
-dracut_install "$python_libdir"/bitfrost/leases/__init__.py
-dracut_install "$python_libdir"/bitfrost/leases/core.py
-dracut_install "$python_libdir"/bitfrost/leases/keys.py
-dracut_install "$python_libdir"/bitfrost/leases/crypto.py
-dracut_install "$python_libdir"/bitfrost/leases/errors.py
-dracut_install "$python_libdir"/bitfrost/util/__init__.py
-dracut_install "$python_libdir"/bitfrost/util/json.py
-dracut_install "$python_libdir"/bitfrost/util/pyverify.so
-
-instmods vfat usb_storage usb8xxx libertas libertas_sdio ohci_hcd ehci_hcd sdhci sd
-dracut_install -o /lib/firmware/usb8388.bin
-dracut_install -o /lib/firmware/sd8686.bin
-dracut_install -o /lib/firmware/sd8686_helper.bin
 

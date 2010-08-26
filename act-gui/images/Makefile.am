@@ -1,4 +1,4 @@
-imgdir = $(DRACUT_MODDIR)/30olpc-boot/act-gui-images
+imgdir = $(DRACUT_MODDIR)/30olpc-activation/act-gui-images
 
 img_DATA = _0.565 _1.565 _2.565 _3.565 _4.565 _5.565 _6.565 _7.565 _8.565 \
 	_9.565 _A.565 _B.565 _C.565 _D.565 _E.565 _F.565 _H.565 _N.565 _S.565 \

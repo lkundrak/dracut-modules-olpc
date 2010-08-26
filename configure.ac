@@ -30,6 +30,7 @@ AC_CONFIG_FILES([
 	30olpc-common/Makefile
 	30olpc-python/Makefile
 	30olpc-boot/Makefile
+	30olpc-activation/Makefile
 	30olpc-customization/Makefile
 	cprl/Makefile
 	ipv6util/Makefile
