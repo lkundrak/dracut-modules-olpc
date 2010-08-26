@@ -1,5 +1,5 @@
 dmoddir = $(DRACUT_MODDIR)/30olpc-boot
-dist_dmod_SCRIPTS = check_ install_ activate.py greplease.py upfs.py
+dist_dmod_SCRIPTS = check_ install_ activate.py greplease.py
 dist_dmod_DATA = olpc-boot-premount.sh olpc-boot-prepivot.sh \
 	olpc-boot-cmdline.sh
 

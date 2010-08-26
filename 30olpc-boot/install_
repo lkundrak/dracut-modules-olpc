@@ -31,13 +31,14 @@ mkdir -p "$initdir"/ofw
 mkdir -p "$initdir"/mnt/usb
 mkdir -p "$initdir"/mnt/sd
 
-for i in activate.py greplease.py upfs.py olpc_act_gui_server.py; do
+for i in activate.py greplease.py olpc_act_gui_server.py; do
 	inst "$moddir"/"$i" /usr/libexec/initramfs-olpc/"$i"
 done
 
 inst "$moddir"/olpc_act_gui_client.py "$python_libdir"/olpc_act_gui_client.py
+inst /usr/lib/dracut-modules-olpc/cprl /usr/libexec/initramfs-olpc/cprl
 
-for i in cprl.so pyvt.so pyfb.so ipv6util.so; do
+for i in pyvt.so pyfb.so ipv6util.so; do
 	inst /usr/lib/dracut-modules-olpc/"$i" "$python_libdir"/"$i"
 done
 

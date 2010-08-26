@@ -144,7 +144,14 @@ frob_symlink() {
 		fi
 		# redirect stdout to stderr so that it doesn't interfere with the
 		# return value of this function (which has to be just an OS hash)
-		/usr/libexec/initramfs-olpc/upfs.py $NEWROOT $current thawed >&2 || return 1
+		echo "Shallow-copy version $current..." >&2
+		local run_path="$NEWROOT/versions/run/$current"
+		local pristine_path="$NEWROOT/versions/run/$current"
+		local tmp_path="$NEWOORT/versions/run/tmp.$current"
+		rm -rf "$run_path" "$tmp_path"
+		mkdir -p "$run_path"
+		/usr/libexec/initramfs-olpc/cprl "$pristine_path" "$tmp_path"
+		mv "$tmp_path" "$run_path"
 	fi
 
 	# create 'running' symlink
