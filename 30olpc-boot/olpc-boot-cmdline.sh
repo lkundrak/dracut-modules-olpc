@@ -1,3 +1,11 @@
+# if we have 2 partitions and the 2nd partition is called 'system', assumed
+# partitioned NAND with p1=jffs2 p2=ubifs
+is_ubifs_root() {
+	[ -e /sys/class/mtd/mtd3/name ] || return 1
+	local name=$(cat /sys/class/mtd/mtd3/name)
+	[ "$name" = "system" ]
+}
+
 if [ -z "$root" ]; then
 	# if no root device was specified, use OFW bootpath to find root
 	mount -t promfs promfs /ofw || die
@@ -10,11 +18,6 @@ if [ -z "$root" ]; then
 	#
 	# FIXME: teach dracut about mtd mounts so that we can avoid using the
 	# mtdblock driver
-	#
-	# FIXME: once away from mtdblock, should be able to handle partitioned
-	# NAND using partition labels, i.e.
-	# /pci/nandflash@c:root,\boot\vmlinuz//jffs2-file-system:\boot\vmlinuz
-	# becomes mtd:root
 	case $bootpath in
 		/pci/sd@c/disk@?:*) # XO-1.5 SD card
 			# extract the bus number (from disk@NUM) and decrement by 1 to
@@ -26,8 +29,14 @@ if [ -z "$root" ]; then
 			;;
 		/pci/nandflash@c:*)
 			# XO-1 internal NAND
-			root="/dev/mtdblock0"
-			fstype="jffs2"
+			if is_ubifs_root; then
+				ubiattach /dev/ubi_ctrl -m 3 -d 0 &
+				root=/dev/ubi0_0
+				rootfstype=ubifs
+			else
+				root="/dev/mtdblock0"
+				fstype="jffs2"
+			fi
 			;;
 		/pci/usb@*) root="/dev/sda2" ;; # external USB, assume partitioned
 	esac

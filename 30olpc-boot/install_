@@ -19,6 +19,7 @@ dracut_install readlink
 dracut_install dirname
 dracut_install basename
 dracut_install mktemp
+dracut_install ubiattach
 
 # mount points used by initramfs code
 mkdir -p "$initdir"/ofw

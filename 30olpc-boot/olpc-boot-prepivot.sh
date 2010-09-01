@@ -18,6 +18,7 @@ is_partitioned() {
 	case $root in
 		*p[0-9]) return 0 ;; # MMC e.g. mmcblk0p2
 		*sd?[0-9]) return 0 ;; # USB e.g. sda2
+		block:/dev/ubi*) return 0 ;; # assume partitions if using ubifs
 		*) return 1 ;;
 	esac
 }
@@ -47,16 +48,34 @@ get_boot_device() {
 		echo ${tmp}1
 		return 0
 		;;
+	block:/dev/ubi*) # if root is ubifs, assume boot is partition 1 type jffs2
+		echo "/dev/mtdblock2"
+		return 0
+		;;
 	esac
 	echo "UNKNOWN"
+	return 1
+}
+
+get_boot_fstype() {
+	case $root in
+	block:/dev/ubi*) # if root is ubifs, assume boot is partition 1 type jffs2
+		echo "jffs2"
+		return 0
+		;;
+	esac
 	return 1
 }
 
 mount_boot() {
 	local bdev=$(get_boot_device)
 	[ $? != 0 ] && return 1
+
+	local bfstype=$(get_boot_fstype)
+	[ $? = 0 ] && bfstype="-t $bfstype"
+
 	mkdir -p /bootpart
-	mount $bdev /bootpart
+	mount $bfstype $bdev /bootpart
 }
 
 unmount_boot() {
