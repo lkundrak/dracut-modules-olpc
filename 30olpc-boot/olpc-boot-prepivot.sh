@@ -61,10 +61,8 @@ get_boot_fstype() {
 	case $root in
 	block:/dev/ubi*) # if root is ubifs, assume boot is partition 1 type jffs2
 		echo "jffs2"
-		return 0
 		;;
 	esac
-	return 1
 }
 
 mount_boot() {
@@ -72,7 +70,7 @@ mount_boot() {
 	[ $? != 0 ] && return 1
 
 	local bfstype=$(get_boot_fstype)
-	[ $? = 0 ] && bfstype="-t $bfstype"
+	[ -n "$bfstype" ] && bfstype="-t $bfstype"
 
 	mkdir -p /bootpart
 	mount $bfstype $bdev /bootpart
