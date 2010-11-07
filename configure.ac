@@ -27,6 +27,7 @@ AC_SUBST(DRACUT_LIBDIR)
 
 AC_CONFIG_FILES([
 	Makefile
+	05olpc-busybox/Makefile
 	30olpc-common/Makefile
 	30olpc-python/Makefile
 	30olpc-boot/Makefile

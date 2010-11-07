@@ -7,18 +7,14 @@ inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline.sh
 inst_hook pre-mount 10 "$moddir"/olpc-boot-premount.sh
 inst_hook pre-pivot 10 "$moddir"/olpc-boot-prepivot.sh
 
-dracut_install dd
-dracut_install rm
-dracut_install mv
-dracut_install ln
-dracut_install sync
-dracut_install sleep
-dracut_install poweroff
-dracut_install umount
-dracut_install readlink
-dracut_install dirname
-dracut_install basename
-dracut_install mktemp
+progs="dd rm mv ln sync sleep poweroff umount readlink dirname basename mktemp"
+
+for i in $progs; do
+        path=$(find_binary "$i")
+        [ -e "$initdir/$path" ] && continue
+        ln -s /sbin/busybox "$initdir/$path"
+done
+
 dracut_install ubiattach
 
 # mount points used by initramfs code
