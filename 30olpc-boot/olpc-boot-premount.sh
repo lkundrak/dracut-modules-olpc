@@ -31,7 +31,6 @@ die() {
 xo=1
 
 getarg activate && do_activate=1
-getarg altboot && olpc_boot_backup=1
 getarg emu && xo=0
 
 if [ "$xo" = "1" ]; then
@@ -57,11 +56,6 @@ echo "$sn/$uuid" > /dev/urandom || die
 
 # use the hardware RNG to generate some more (trac #7213)
 [ -e /dev/hwrng ] && dd if=/dev/hwrng of=/dev/urandom bs=1k count=1 >/dev/null 2>&1
-
-# are we booting from an alternate image?
-case $bootpath in
-	*\\boot-alt\\*) olpc_boot_backup=1 ;;
-esac
 
 # check for activation code, perform activation if necessary
 

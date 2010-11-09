@@ -120,16 +120,47 @@ rewrite_symlink()
 	return $retcode
 }
 
-# frob the /current symlink to start from the backup filesystem if requested
+# cleanup a part of the versions tree
+# removes all versions except the current image and any others marked as sticky
+purge_versions()
+{
+	local current=$1 dir=$2 oIFS
+	[ -d "$dir" ] || return 0
+
+	# XXX can't use globs here because dash doesn't support null globbing
+	oIFS=$IFS
+	IFS="
+"
+	for ent in $(ls $dir); do
+		[ "$ent" = "$current" ] && continue
+		[ -e "$NEWROOT/versions/sticky/$ent" ] && continue
+		rm -rf "$dir"/"$ent"
+	done
+	IFS=$oIFS
+}
+
+# Free up space for update by removing old or incomplete versions.
+delete_old_versions() {
+	local current=$1 ver
+	[ -e "$NEWROOT/versions/sticky/$current" ] && return 0
+
+	purge_versions "$current" $NEWROOT/versions/pristine
+	purge_versions "$current" $NEWROOT/versions/run
+	purge_versions "$current" $NEWROOT/versions/contents
+	purge_versions "$current" $NEWROOT/versions/configs
+	purge_versions "$current" /bootpart/boot-versions
+	return 0
+}
+
 # return the 'short name' for the image we should boot, or None if the
 # filesystem is not upgradable.
-frob_symlink() {
+get_current() {
 	local retcode
 	if is_partitioned; then
-		current=$(frob_symlink_partitioned)
+		current=$(get_current_partitioned)
 		retcode=$?
 	else
-		current=$(frob_symlink_unpartitioned)
+		current=$(get_current_unpartitioned)
 		retcode=$?
 	fi
 
@@ -137,6 +168,8 @@ frob_symlink() {
 
 	# empty return value means filesystem is not versioned
 	[ -n "$current" ] || return 0
+
+	delete_old_versions "$current"
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
@@ -168,8 +201,8 @@ frob_symlink() {
 }
 
 
-frob_symlink_partitioned() {
-	local target dir current alt
+get_current_partitioned() {
+	local target dir
 
 	[ -h /bootpart/boot -a -d /bootpart/boot-versions ] || return 0
 
@@ -177,31 +210,13 @@ frob_symlink_partitioned() {
 	target=$(readlink /bootpart/boot)
 	dir=$(dirname "$target")
 	[ "$dir" != "boot-versions" ] && return 1
-	current=$(basename $target)
 
-	if [ "$olpc_boot_backup" = "1" -a -h /bootpart/boot/alt ]; then
-		target=$(readlink /bootpart/boot/alt)
-		dir=$(dirname "$target")
-		[ "$dir" != ".." ] && return 1
-		alt=$(basename "$target")
-
-		sync || return 1 # superstition
-
-		# make alternate link in new configuration point to the non-backup OS
-		rewrite_symlink ../"$current" /bootpart/boot/alt/alt || return 1
-
-		# update /boot to point at alternate OS
-		rewrite_symlink boot-versions/$alt /bootpart/boot || return 1
-
-		current=$alt
-	fi
-
-	echo $current
+	basename $target
 	return 0
 }
 
-frob_symlink_unpartitioned() {
-	local target dir current alt config d tmp
+get_current_unpartitioned() {
+	local target dir current
 	[ -h "$NEWROOT/versions/boot/current" ] || return 0
 
 	# the 'current' symlink is of the form /versions/pristine/<hash>
@@ -210,29 +225,6 @@ frob_symlink_unpartitioned() {
 	dir=$(dirname "$target")
 	current=$(basename "$target")
 	[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
-
-	if [ "$olpc_boot_backup" = "1" ]; then
-		target=$(readlink "$NEWROOT/versions/boot/alt")
-		dir=$(dirname "$target")
-		alt=$(basename "$target")
-		[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
-
-		# atomically swap current and alt.
-		config=$(readlink "$NEWROOT/versions/boot")
-		d=$(mktemp -d --tmpdir="$NEWROOT/versions/configs" cfg.XXXXXXXXXX )
-		ln -s "/versions/pristine/$alt" "$d/current" || return 1
-		ln -s "/versions/pristine/$current" "$d/alt" || return 1
-		ln -s "${d#$NEWROOT/versions/}" "$NEWROOT/versions/boot.tmp" || return 1
-		sync || return 1 # superstition
-		mv "$NEWROOT/versions/boot.tmp" "$NEWROOT/versions/boot" || return 1
-		sync || return 1 # superstition
-
-		# remove old config
-		rm -rf "$NEWROOT/$config" || return 1
-		tmp=$current
-		current=$alt
-		alt=$tmp
-	fi
 
 	echo $current
 	return 0
@@ -300,7 +292,7 @@ fi
 # this covers the "regular" filesystem layout
 start_bootanim "$NEWROOT"
 
-current=$(frob_symlink)
+current=$(get_current)
 [ "$?" != "0" ] && die
 
 if [ -n "$current" ]; then
