@@ -23,15 +23,6 @@ is_partitioned() {
 	esac
 }
 
-# make root writable
-writable_start() {
-	mount -o remount,rw "$NEWROOT"
-}
-
-writable_done() {
-	mount -o remount,ro "$NEWROOT"
-}
-
 get_boot_device() {
 	local tmp
 
@@ -82,13 +73,9 @@ unmount_boot() {
 
 erase_lease() {
 	if is_partitioned; then
-		mount_boot
 		rm -f /bootpart/security/lease.sig
-		unmount_boot
 	else
-		writable_start
 		rm -f "$NEWROOT"/security/lease.sig
-		writable_done
 	fi
 }
 
@@ -103,10 +90,8 @@ check_stolen() {
 	fi
 
 	if ! [ -d "$NEWROOT/.private" -a -d "$NEWROOT/security/.private" ]; then
-		writable_start || die
 		mkdir -p "$NEWROOT/.private"
 		mkdir -p "$NEWROOT/security/.private"
-		writable_done || die
 	fi
 
 	# mount OATC's private scratch space
@@ -155,10 +140,6 @@ frob_symlink() {
 
 	# check that /versions/run/$current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
-		if ! [ "$writable" = "1" ]; then
-			writable_start || return 1
-			writable=1
-		fi
 		# redirect stdout to stderr so that it doesn't interfere with the
 		# return value of this function (which has to be just an OS hash)
 		echo "Shallow-copy version $current..." >&2
@@ -175,28 +156,19 @@ frob_symlink() {
 
 	# trac #5317: only create symlink if necessary
 	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$current" ]; then
-		if [ "$writable" = "1" ]; then
-			writable_done || return 1
-		fi
 		echo $current
 		return 0
 	fi
 
 	# make symlink
-	if ! [ "$writable" = "1" ]; then
-		writable_start || return 1
-		writable=1
-	fi
-
 	rm -f "$NEWROOT/versions/running" # ignore error
 	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
-	writable_done || return 1
 	echo $current
 	return 0
 }
 
 
-_frob_symlink_partitioned() {
+frob_symlink_partitioned() {
 	local target dir current alt
 
 	[ -h /bootpart/boot -a -d /bootpart/boot-versions ] || return 0
@@ -228,23 +200,8 @@ _frob_symlink_partitioned() {
 	return 0
 }
 
-frob_symlink_partitioned() {
-	# wrap _frob_symlink_partitioned so that we're sure to unmount /bootpart
-	# on all the exit paths
-	local retcode
-
-	mount_boot || return 1
-
-	_frob_symlink_partitioned
-	retcode=$?
-
-	unmount_boot
-	return $retcode
-}
-
-
 frob_symlink_unpartitioned() {
-	local target dir current alt config d tmp writable=0
+	local target dir current alt config d tmp
 	[ -h "$NEWROOT/versions/boot/current" ] || return 0
 
 	# the 'current' symlink is of the form /versions/pristine/<hash>
@@ -261,8 +218,6 @@ frob_symlink_unpartitioned() {
 		[ "$dir" != "/versions/pristine" -a "$dir" != "/versions/run" -a "$dir" != "../../run" ] && return 1
 
 		# atomically swap current and alt.
-		writable_start || return 1
-		writable=1
 		config=$(readlink "$NEWROOT/versions/boot")
 		d=$(mktemp -d --tmpdir="$NEWROOT/versions/configs" cfg.XXXXXXXXXX )
 		ln -s "/versions/pristine/$alt" "$d/current" || return 1
@@ -312,8 +267,18 @@ start_bootanim() {
 	umount "$1"/dev
 }
 
-# XXX mount gives a warning in writable_start() if there's no fstab
+# XXX mount gives a warning if there's no fstab
 echo "" >> /etc/fstab
+
+# make writable, since some of our stuff needs it
+# XXX ask dracut to mount rw to begin with?
+# no big deal, remounting is dead quick
+mount -o remount,rw "$NEWROOT" || die
+
+# we also need the boot partition available
+if is_partitioned; then
+	mount_boot || die
+fi
 
 # check private security dir
 check_stolen
@@ -322,15 +287,11 @@ check_stolen
 # sooner rather than later
 if [ -n "$olpc_write_lease" ]; then
 	if is_partitioned; then
-		mount_boot || die
 		mkdir -p /bootpart/security || die
 		echo "$olpc_write_lease" > "/bootpart/security/lease.sig" || die
-		unmount_boot || die
 	else
-		writable_start || die
 		mkdir -p $NEWROOT/security || die
 		echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
-		writable_done || die
 	fi
 fi
 
@@ -363,7 +324,6 @@ if [ -n "$current" ]; then
 	# create some bind mounts
 	# we do this with the original root writable, because bind mounting copies
 	# over the mount options.
-	mount -o remount,rw $oldroot || die
 	for frag in home versions; do
 		# ignore failures here: a debian installation (say) may not have
 		# these dirs.
@@ -371,21 +331,20 @@ if [ -n "$current" ]; then
 	done
 
 	if is_partitioned; then
-		mount_boot
 		mount --bind /bootpart/security "$NEWROOT/security"
-		unmount_boot
 	else
 		mount --bind "$oldroot/security" "$NEWROOT/security"
 	fi
 
 	# now we don't need the old root for anything else
 	umount $oldroot || die
-
-	# at this point, the /vsysroot mount is read-only.
-	# distro init scripts will remount it read-write early on.
 fi
 
-unset writable_start writable_done
+is_partitioned && unmount_boot
+
+# distro init scripts expect ro root, they will remount it read-write early on.
+mount -o remount,ro "$NEWROOT"
+
 unset check_stolen ensure_dev start_bootanim
 unset die
 
