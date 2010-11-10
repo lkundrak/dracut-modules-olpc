@@ -177,7 +177,7 @@ get_current() {
 		# return value of this function (which has to be just an OS hash)
 		echo "Shallow-copy version $current..." >&2
 		local run_path="$NEWROOT/versions/run/$current"
-		local pristine_path="$NEWROOT/versions/run/$current"
+		local pristine_path="$NEWROOT/versions/pristine/$current"
 		local tmp_path="$NEWOORT/versions/run/tmp.$current"
 		rm -rf "$run_path" "$tmp_path"
 		mkdir -p "$run_path"
