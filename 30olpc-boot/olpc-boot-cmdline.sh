@@ -32,7 +32,7 @@ if [ -z "$root" ]; then
 			if is_ubifs_root; then
 				ubiattach /dev/ubi_ctrl -m 3 -d 0 &
 				root=/dev/ubi0_0
-				rootfstype=ubifs
+				fstype=ubifs
 			else
 				root="/dev/mtdblock0"
 				fstype="jffs2"
