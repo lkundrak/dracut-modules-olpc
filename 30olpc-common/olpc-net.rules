@@ -5,8 +5,8 @@
 # Note that this file needs to present in both olpc-utils and the initramfs.
 
 # XO-1: the rule is ugly because libertas is not exposed in the device tree?
-SUBSYSTEM=="net", KERNEL=="eth*", SUBSYSTEMS=="usb", ATTRS{product}=="MARVELL Wireless Device", NAME="eth0"
+SUBSYSTEM=="net", KERNEL=="wlan*", SUBSYSTEMS=="usb", ATTRS{product}=="MARVELL Wireless Device", NAME="eth0"
 
 # XO-1.5
-SUBSYSTEM=="net", KERNEL=="eth*", DRIVERS=="libertas_sdio", NAME="eth0"
+SUBSYSTEM=="net", KERNEL=="wlan*", DRIVERS=="libertas_sdio", NAME="eth0"
 
