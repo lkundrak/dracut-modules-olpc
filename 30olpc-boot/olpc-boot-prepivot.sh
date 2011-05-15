@@ -178,7 +178,7 @@ get_current() {
 		echo "Shallow-copy version $current..." >&2
 		local run_path="$NEWROOT/versions/run/$current"
 		local pristine_path="$NEWROOT/versions/pristine/$current"
-		local tmp_path="$NEWOORT/versions/run/tmp.$current"
+		local tmp_path="$NEWROOT/versions/run/tmp.$current"
 		rm -rf "$run_path" "$tmp_path"
 		mkdir -p "$run_path"
 		/usr/libexec/initramfs-olpc/cprl "$pristine_path" "$tmp_path"
