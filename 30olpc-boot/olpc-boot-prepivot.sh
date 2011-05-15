@@ -134,9 +134,25 @@ purge_versions()
 	for ent in $(ls $dir); do
 		[ "$ent" = "$current" ] && continue
 		[ -e "$NEWROOT/versions/sticky/$ent" ] && continue
-		rm -rf "$dir"/"$ent"
+		to_purge="$to_purge $dir/$ent"
 	done
 	IFS=$oIFS
+}
+
+do_purge()
+{
+	# we do the removal in the background, so that we can move on as quick
+	# as possible to kicking off the boot animation. otherwise it appears that
+	# the system has frozen. we'll wait for the purging to finish before
+	# switching root (see 'wait' call further down).
+	[ -n "$to_purge" ] || return 0
+
+	echo "Purging old versions, boot may be slightly delayed..."
+	rm -rf $to_purge 1>&2 &
+
+	# let the delete process get a head-start, as we might move on to
+	# creating a mass of hard-links in parallel
+	sleep 0.5
 }
 
 # Free up space for update by removing old or incomplete versions.
@@ -144,41 +160,45 @@ delete_old_versions() {
 	local current=$1 ver
 	[ -e "$NEWROOT/versions/sticky/$current" ] && return 0
 
+	to_purge=""
 	purge_versions "$current" $NEWROOT/versions/pristine
 	purge_versions "$current" $NEWROOT/versions/run
 	purge_versions "$current" $NEWROOT/versions/contents
 	purge_versions "$current" $NEWROOT/versions/configs
 	purge_versions "$current" /bootpart/boot-versions
+	do_purge
+
 	return 0
 }
 
-# return the 'short name' for the image we should boot, or None if the
-# filesystem is not upgradable.
+# set global variable $current to the 'short name' for the image we should
+# boot, or None if the filesystem is not upgradable.
 get_current() {
 	local retcode
+	local _current
 	if is_partitioned; then
-		current=$(get_current_partitioned)
+		_current=$(get_current_partitioned)
 		retcode=$?
 	else
-		current=$(get_current_unpartitioned)
+		_current=$(get_current_unpartitioned)
 		retcode=$?
 	fi
 
 	[ $retcode = 0 ] || return $retcode
 
 	# empty return value means filesystem is not versioned
-	[ -n "$current" ] || return 0
+	[ -n "$_current" ] || return 0
 
-	delete_old_versions "$current"
+	delete_old_versions "$_current"
 
 	# check that /versions/run/$current exists; create if needed.
-	if ! [ -d "$NEWROOT/versions/run/$current" ]; then
+	if ! [ -d "$NEWROOT/versions/run/$_current" ]; then
 		# redirect stdout to stderr so that it doesn't interfere with the
 		# return value of this function (which has to be just an OS hash)
-		echo "Shallow-copy version $current..." >&2
-		local run_path="$NEWROOT/versions/run/$current"
-		local pristine_path="$NEWROOT/versions/pristine/$current"
-		local tmp_path="$NEWROOT/versions/run/tmp.$current"
+		echo "Shallow-copy version $_current..." >&2
+		local run_path="$NEWROOT/versions/run/$_current"
+		local pristine_path="$NEWROOT/versions/pristine/$_current"
+		local tmp_path="$NEWROOT/versions/run/tmp.$_current"
 		rm -rf "$run_path" "$tmp_path"
 		mkdir -p "$run_path"
 		/usr/libexec/initramfs-olpc/cprl "$pristine_path" "$tmp_path"
@@ -188,15 +208,15 @@ get_current() {
 	# create 'running' symlink
 
 	# trac #5317: only create symlink if necessary
-	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$current" ]; then
-		echo $current
+	if [ -h "$NEWROOT/versions/running" -a "$(readlink $NEWROOT/versions/running)" = "pristine/$_current" ]; then
+		current=$_current
 		return 0
 	fi
 
 	# make symlink
 	rm -f "$NEWROOT/versions/running" # ignore error
 	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
-	echo $current
+	current=$_current
 	return 0
 }
 
@@ -292,9 +312,7 @@ fi
 # this covers the "regular" filesystem layout
 start_bootanim "$NEWROOT"
 
-current=$(get_current)
-[ "$?" != "0" ] && die
-
+get_current || die
 if [ -n "$current" ]; then
 	newroot=$NEWROOT/versions/run/$current
 
@@ -312,6 +330,10 @@ if [ -n "$current" ]; then
 	# we have to do this after sorting out the bind mount, if we run it on
 	# $oldroot then the $oldroot unmount will fail below (not exactly sure why)
 	start_bootanim $NEWROOT
+
+	# now that we've indicated some progress, wait for any old version purging
+	# (via delete_old_versions) to complete
+	wait
 
 	# create some bind mounts
 	# we do this with the original root writable, because bind mounting copies
