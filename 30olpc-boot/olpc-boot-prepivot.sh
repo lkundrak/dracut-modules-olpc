@@ -155,17 +155,34 @@ do_purge()
 	sleep 0.5
 }
 
+purge_configs() {
+	[ -e $NEWROOT/versions/boot -a -e $NEWROOT/versions/configs ] || return
+
+	# clean all configs except for the one being used to boot
+	local boot_ver=$(basename $(readlink $NEWROOT/versions/boot))
+
+	# XXX can't use globs here because dash doesn't support null globbing
+	oIFS=$IFS
+	IFS="
+"
+	for ent in $(ls $NEWROOT/versions/configs); do
+		[ "$ent" = "$boot_ver" ] && continue
+		to_purge="$to_purge $NEWROOT/versions/configs/$ent"
+	done
+	IFS=$oIFS
+}
+
 # Free up space for update by removing old or incomplete versions.
 delete_old_versions() {
-	local current=$1 ver
+	local current=$1
 	[ -e "$NEWROOT/versions/sticky/$current" ] && return 0
 
 	to_purge=""
 	purge_versions "$current" $NEWROOT/versions/pristine
 	purge_versions "$current" $NEWROOT/versions/run
 	purge_versions "$current" $NEWROOT/versions/contents
-	purge_versions "$current" $NEWROOT/versions/configs
 	purge_versions "$current" /bootpart/boot-versions
+	purge_configs
 	do_purge
 
 	return 0
