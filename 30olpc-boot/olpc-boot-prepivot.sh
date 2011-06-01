@@ -208,7 +208,7 @@ get_current() {
 
 	delete_old_versions "$_current"
 
-	# check that /versions/run/$current exists; create if needed.
+	# check that /versions/run/$_current exists; create if needed.
 	if ! [ -d "$NEWROOT/versions/run/$_current" ]; then
 		# redirect stdout to stderr so that it doesn't interfere with the
 		# return value of this function (which has to be just an OS hash)
@@ -232,7 +232,7 @@ get_current() {
 
 	# make symlink
 	rm -f "$NEWROOT/versions/running" # ignore error
-	ln -s "pristine/$current" "$NEWROOT/versions/running" || return 1
+	ln -s "pristine/$_current" "$NEWROOT/versions/running" || return 1
 	current=$_current
 	return 0
 }
