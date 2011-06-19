@@ -35,3 +35,4 @@ dracut_install -o /lib/firmware/usb8388.bin
 dracut_install -o /lib/firmware/sd8686.bin
 dracut_install -o /lib/firmware/sd8686_helper.bin
 
+inst "$moddir"/filesystems /etc/filesystems

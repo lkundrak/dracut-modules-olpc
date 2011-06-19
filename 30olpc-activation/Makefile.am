@@ -1,5 +1,6 @@
 dmoddir = $(DRACUT_MODDIR)/30olpc-activation
 dist_dmod_SCRIPTS = check_ install_ activate.py greplease.py
+dist_dmod_DATA = filesystems
 
 # Ugh. automake doesnt like files called "install" or "check" because it
 # provides default rules with those names.
