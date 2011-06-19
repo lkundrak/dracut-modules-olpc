@@ -76,9 +76,6 @@ def mesh_device_exists ():
     return os.path.exists('/sys/class/net/msh0')
 
 def set_addresses_mesh ():
-    check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
-    check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
-    check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
     # set up link-local address
     mac = open('/sys/class/net/msh0/address').read().strip().split(':')
     top = int(mac[0], 16) ^ 2 # universal/local bit complemented
