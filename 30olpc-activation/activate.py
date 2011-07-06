@@ -159,7 +159,7 @@ def select_bss (ssid):
         if appos == -1:
             continue
         iw_ap = lines[1][appos+14:].strip()
-        if iw_ap[0].isdigit():
+        if iw_ap[0].isdigit() or iw_ap[0].upper() in ('A', 'B', 'C', 'D', 'E', 'F'):
             print >> sys.stderr, "connected!"
             set_addresses_bss()
             return True
