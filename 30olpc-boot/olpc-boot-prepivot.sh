@@ -374,7 +374,15 @@ fi
 is_partitioned && unmount_boot
 
 # distro init scripts expect ro root, they will remount it read-write early on.
-mount -o remount,ro "$NEWROOT"
+# if booting non-partitioned, only remount the VFS-level mount as read-only.
+# this allows the other bind mounts (such as /security) to remain mounted RW.
+# /security must be RW during boot for rwtab to take effect.
+# see http://karelzak.blogspot.com/2011/04/bind-mounts-mtab-and-read-only.html
+if is_partitioned; then
+	mount -o remount,ro "$NEWROOT"
+else
+	mount -o remount,ro,bind "$NEWROOT"
+fi
 
 unset check_stolen ensure_dev start_bootanim
 unset die
