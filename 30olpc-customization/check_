@@ -1,3 +1,5 @@
 #!/bin/bash
 [[ $1 = -d ]] && echo "olpc-python olpc-common udev-rules"
-exit 0
+#change to 255, for allow to include this module only when
+#the dracut configuration request it.(#707423)
+exit 255

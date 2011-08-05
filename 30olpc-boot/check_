@@ -1,3 +1,6 @@
 #!/bin/bash
 [[ $1 = -d ]] && echo "olpc-common"
-exit 0
+
+# Return 255 so that this module is only included when explicitly
+# requested by the configuration (RH#707423)
+exit 255
