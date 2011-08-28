@@ -7,14 +7,18 @@ echo "Hello, (children of the) world!"
 
 exists_ofw()
 {
-	[ -e /ofw/$1 ]
+	[ -e /proc/device-tree/$1 -o -e /ofw/$1 ]
 }
 
 read_ofw()
 {
 	# OFW mfg data might include \n\0 at the end of the file. but these are
 	# automatically stripped by the shell.
-	local contents=$(cat /ofw/$1)
+	if [ -e /proc/device-tree/$1 ]; then
+		local contents=$(cat /proc/device-tree/$1)
+	else
+		local contents=$(cat /ofw/$1)
+	fi
 	# Use printf, to avoid echo's expansion of backslash-escaped sequences.
 	printf "%s" $contents
 }
@@ -34,7 +38,9 @@ getarg activate && do_activate=1
 getarg emu && xo=0
 
 if [ "$xo" = "1" ]; then
-	mount -t promfs promfs /ofw || die
+	if [ ! -e /proc/device-tree ]; then
+		mount -t promfs promfs /ofw || die
+	fi
 	arch=$(read_ofw architecture)
 	sn=$(read_ofw mfg-data/SN)
 	uuid=$(read_ofw mfg-data/U#)
@@ -42,7 +48,9 @@ if [ "$xo" = "1" ]; then
 	exists_ofw mfg-data/ak && ak=1
 
 	# import bitfrost.leases.keys
-	umount /ofw || die
+	if [ ! -e /proc/device-tree ]; then
+		umount /ofw || die
+	fi
 fi
 
 # Might not be an XO (could be an emulator)

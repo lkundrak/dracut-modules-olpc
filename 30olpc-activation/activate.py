@@ -399,10 +399,16 @@ def main():
         sys.exit(1)
 
     # read extra deployment keys and bootpath
-    check_call(['/bin/mount','-t','promfs','promfs','/ofw'])
+    if not os.path.exists('/proc/device-tree'):
+        check_call(['/bin/mount','-t','promfs','promfs','/ofw'])
     import bitfrost.leases.keys
-    bootpath = open('/ofw/chosen/bootpath').read().rstrip("\n\0")
-    check_call(['/bin/umount','/ofw'])
+    if os.path.exists('/proc/device-tree/chosen/bootpath'):
+        bootpath_path = '/proc/device-tree/chosen/bootpath'
+    else:
+        bootpath_path = '/ofw/chosen/bootpath'
+    bootpath = open(bootpath_path).read().rstrip("\n\0")
+    if not os.path.exists('/proc/device-tree'):
+        check_call(['/bin/umount','/ofw'])
 
     ret = activate(sys.argv[1], sys.argv[2])
     if ret is not None:

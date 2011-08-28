@@ -8,9 +8,13 @@ is_ubifs_root() {
 
 if [ -z "$root" ]; then
 	# if no root device was specified, use OFW bootpath to find root
-	mount -t promfs promfs /ofw || die
-	bootpath=$(cat /ofw/chosen/bootpath)
-	umount /ofw
+	if [ -e /proc/device-tree ]; then
+		bootpath=$(cat /proc/device-tree/chosen/bootpath)
+	else
+		mount -t promfs promfs /ofw || die
+		bootpath=$(cat /ofw/chosen/bootpath)
+		umount /ofw
+	fi
 
 	# XXX: unpartitioned XO-1.5 not supported
 	# XXX: unpartitioned USB not supported
