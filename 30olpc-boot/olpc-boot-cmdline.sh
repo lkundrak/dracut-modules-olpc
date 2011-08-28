@@ -23,9 +23,16 @@ if [ -z "$root" ]; then
 	# FIXME: teach dracut about mtd mounts so that we can avoid using the
 	# mtdblock driver
 	case $bootpath in
-		/pci/sd@c/disk@?:*) # XO-1.5 SD card
+		/sd@d4280000/disk@?:*) # XO-1.75
 			# extract the bus number (from disk@NUM) and decrement by 1 to
 			# correlate with linux device
+			tmp=${bootpath#/sd@d4280000/disk@}
+			tmp=${tmp%%:*}
+			tmp=$((tmp - 1))
+			root="/dev/disk/mmc/mmc${tmp}p2"
+			;;
+		/pci/sd@c/disk@?:*) # XO-1.5 SD card
+			# Same calculation as XO-1.75
 			tmp=${bootpath#/pci/sd@c/disk@}
 			tmp=${tmp%%:*}
 			tmp=$((tmp - 1))

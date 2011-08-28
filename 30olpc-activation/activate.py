@@ -123,6 +123,9 @@ def sd_get_disk():
             # oops, this if branch will also trigger for XO-1.5 B3 when booting
             # from external SD. but if you're doing that then you arent going
             # to be expecting to find a lease on SD, I hope.
+    elif bootpath.startswith("/sd@d4280000/disk@"):
+        # XO-1.75: return address of external SD card
+        return "/dev/disk/mmc/mmc0"
 
     # XO-1, or fallback:
     return "/dev/mmcblk0"
