@@ -12,12 +12,13 @@ exists_ofw()
 
 read_ofw()
 {
+	local contents
 	# OFW mfg data might include \n\0 at the end of the file. but these are
 	# automatically stripped by the shell.
 	if [ -e /proc/device-tree/$1 ]; then
-		local contents=$(cat /proc/device-tree/$1)
+		contents=$(cat /proc/device-tree/$1)
 	else
-		local contents=$(cat /ofw/$1)
+		contents=$(cat /ofw/$1)
 	fi
 	# Use printf, to avoid echo's expansion of backslash-escaped sequences.
 	printf "%s" $contents
