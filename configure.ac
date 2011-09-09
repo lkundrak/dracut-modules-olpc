@@ -33,6 +33,7 @@ AC_CONFIG_FILES([
 	30olpc-boot/Makefile
 	30olpc-activation/Makefile
 	30olpc-customization/Makefile
+	95olpc-mtd/Makefile
 	cprl/Makefile
 	ipv6util/Makefile
 	act-gui/Makefile

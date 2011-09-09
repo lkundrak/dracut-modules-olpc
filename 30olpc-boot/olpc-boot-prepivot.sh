@@ -40,7 +40,7 @@ get_boot_device() {
 		return 0
 		;;
 	block:/dev/ubi*) # if root is ubifs, assume boot is partition 1 type jffs2
-		echo "/dev/mtdblock2"
+		echo "mtd2"
 		return 0
 		;;
 	esac

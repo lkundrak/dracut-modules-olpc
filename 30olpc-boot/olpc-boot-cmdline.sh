@@ -19,9 +19,6 @@ if [ -z "$root" ]; then
 	# XXX: unpartitioned XO-1.5 not supported
 	# XXX: unpartitioned USB not supported
 	# XXX: might get confused if more than 1 USB disk is plugged in
-	#
-	# FIXME: teach dracut about mtd mounts so that we can avoid using the
-	# mtdblock driver
 	case $bootpath in
 		/sd@d4280000/disk@?:*) # XO-1.75
 			# extract the bus number (from disk@NUM) and decrement by 1 to
@@ -45,7 +42,7 @@ if [ -z "$root" ]; then
 				root=/dev/ubi0_0
 				fstype=ubifs
 			else
-				root="/dev/mtdblock0"
+				root="mtd0"
 				fstype="jffs2"
 			fi
 			;;
