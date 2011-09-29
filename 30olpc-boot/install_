@@ -27,5 +27,5 @@ inst /usr/lib/dracut-modules-olpc/cprl /usr/libexec/initramfs-olpc/cprl
 # Disable dracut's fstab-checking, not appropriate for us
 # http://dev.laptop.org/ticket/10394
 mkdir -p ${initdir}/etc
-echo " rd_NO_FSTAB" >> ${initdir}/etc/cmdline
+echo " rd_NO_FSTAB fastboot" >> ${initdir}/etc/cmdline
 
