@@ -1,6 +1,8 @@
 import os
 cdef extern from "fbutil.h":
     struct fb_var_screeninfo:
+        int xres
+        int yres
         int xres_virtual
         int yres_virtual
     struct fbinfo:
@@ -80,8 +82,8 @@ cdef class FrameBuffer:
         """Open the framebuffer at the given devicename."""
         rc = fb_open(devname, &self.fbi)
         if rc != 0: raise OSError
-        self.width = self.fbi.vinfo.xres_virtual
-        self.height = self.fbi.vinfo.yres_virtual
+        self.width = self.fbi.vinfo.xres
+        self.height = self.fbi.vinfo.yres
         self.imagemap = {}
     def __dealloc__(self):
         """Close the framebuffer."""
