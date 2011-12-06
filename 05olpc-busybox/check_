@@ -1,4 +1,0 @@
-#!/bin/bash
-# Return 255 so that this module is only included when explicitly
-# requested by the configuration (RH#707423)
-exit 255
