@@ -6,6 +6,7 @@ img_DATA = _0.565 _1.565 _2.565 _3.565 _4.565 _5.565 _6.565 _7.565 _8.565 \
 	stolen_msg.565 stolen.565 stolen_XO.565 \
 	locked_msg.565 locked_XO.565 lock.565 \
 	NAND_flash_outline.565 NAND_flash.565 \
+	clock.565 clock_outline.565 rtcreset_msg.565 \
 	SD_card_outline.565 SD_card.565 \
 	USB_key_outline.565 USB_key.565 \
 	wireless11.565 wireless1.565 wireless6.565 wireless_outline.565 wireless.565

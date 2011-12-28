@@ -316,11 +316,22 @@ check_stolen
 # sooner rather than later
 if [ -n "$olpc_write_lease" ]; then
 	if is_partitioned; then
-		mkdir -p /bootpart/security || die
-		echo "$olpc_write_lease" > "/bootpart/security/lease.sig" || die
+		dir="/bootpart/security"
 	else
-		mkdir -p $NEWROOT/security || die
-		echo "$olpc_write_lease" > "$NEWROOT/security/lease.sig" || die
+		dir="$NEWROOT/security"
+	fi
+	mkdir -p $dir || die
+	if echo "$olpc_write_lease" | grep -q "^rtc" ; then
+		path="rtcreset.sig"
+	else
+		path="lease.sig"
+	fi
+	echo "$olpc_write_lease" > "$dir/$path" || die
+
+	if [ $path = "rtcreset.sig" ]; then
+		is_partitioned && unmount_boot
+		umount $NEWROOT
+		reboot -f
 	fi
 fi
 

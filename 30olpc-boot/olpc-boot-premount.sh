@@ -46,8 +46,13 @@ if [ "$xo" = "1" ]; then
 	sn=$(read_ofw mfg-data/SN)
 	uuid=$(read_ofw mfg-data/U#)
 	bootpath=$(read_ofw chosen/bootpath)
-	exists_ofw mfg-data/ak && ak=1
 
+	exists_ofw mfg-data/ak && ak=1
+	if exists_ofw 'chosen/rtc-status'; then
+		rtcstatus=$(read_ofw chosen/rtc-status)
+		exists_ofw chosen/rtc-timestamp && rtctimestamp=$(read_ofw chosen/rtc-timestamp)
+		rtccount=$(read_ofw chosen/rtc-count)
+	fi
 	# import bitfrost.leases.keys
 	if [ ! -e /proc/device-tree ]; then
 		umount /ofw || die
@@ -79,10 +84,9 @@ esac
 [ "$xo" = "0" -o "$ak" = "1" ] && do_activate=0
 
 if [ "$do_activate" = "1" ]; then
-	olpc_write_lease=$(/usr/libexec/initramfs-olpc/activate.py $sn $uuid)
+	olpc_write_lease=$(/usr/libexec/initramfs-olpc/activate.py "$sn" "$uuid" "$rtcstatus" "$rtctimestamp" "$rtccount")
 	if [ "$?" != "0" -o -z "$olpc_write_lease" ]; then
 		#  This message is never seen unless the GUI failed.
-		echo "Could not activate this XO."
 		echo "Serial number: $sn" # don't show UUID
 		# activation failed.  shutdown in 2 minutes.
 		sync || die

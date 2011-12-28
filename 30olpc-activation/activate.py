@@ -169,13 +169,13 @@ def select_bss (ssid):
 
     return False
 
-def try_bss_network (ssid, serial_num):
+def try_bss_network (ssid, serial_num, rtctimestamp=None, rtccount=None):
     """Try to get a keylist from the server on a given BSS network."""
     try:
         associated = select_bss(ssid)
         if associated:
             time.sleep(4) # let network settle down
-            return contact_lease_server('eth0', serial_num)
+            return contact_server('eth0', serial_num, rtctimestamp, rtccount)
         else:
             return None
     finally:
@@ -247,12 +247,17 @@ def net_init():
     call(['/sbin/modprobe', 'libertas_sdio']) # XO-1.5
     call(['/sbin/modprobe','ipv6']) # ipv6 is built statically in recent kernels
 
-def try_to_get_lease(family, addr, serial_num):
+def try_to_get_data(family, addr, serial_num, rtctimestamp=None, rtccount=None):
+    """Get a lease or a rtcreset"""
     s = socket(family, SOCK_STREAM)
+    if rtctimestamp:
+        msg = 'rtcreset ' + serial_num + ' ' + rtctimestamp + ' ' + rtccount
+    else:
+        msg = serial_num
     try:
         s.settimeout(3)
         s.connect(addr)
-        s.sendall(serial_num)
+        s.sendall(msg)
         s.shutdown(SHUT_WR)
         s.setblocking(1)
         f = s.makefile('r+',0)
@@ -264,7 +269,7 @@ def try_to_get_lease(family, addr, serial_num):
     finally:
         s.close()
 
-def contact_lease_server (iface, serial_num):
+def contact_server (iface, serial_num, rtctimestamp=None, rtccount=None):
     # try to contact the lease server
     if iface.startswith("msh"):
         xs6addr = 'fe80::abcd:ef01'
@@ -275,7 +280,7 @@ def contact_lease_server (iface, serial_num):
                                      0, if_nametoindex(iface))),
                           (AF_INET, ('172.18.0.1',191)), ] * 4:
         try:
-            l = try_to_get_lease(family, addr, serial_num)
+            l = try_to_get_data(family, addr, serial_num, rtctimestamp, rtccount)
             if l is not None:
                 return l
         except:
@@ -287,10 +292,39 @@ def try_mesh_network (channel, serial_num):
     select_mesh_channel(channel)
     try:
         time.sleep(4) # let network settle down
-        return contact_lease_server('msh0', serial_num)
+        return contact_server('msh0', serial_num)
     finally:
         call(['/sbin/ip','link','set','dev','msh0','down'])
 
+def rtcreset (serial_num, uuid, rtctimestamp, rtccount):
+    """
+    Search for RTC timestamp reset signature via network, to be saved on-disk
+    and processed by the firmware upon next reboot.
+    """
+    try:
+        send('start')
+        send('serial '+serial_num)
+        send('rtcreset')
+        time.sleep(5)
+        print >> sys.stderr, "********************************************************"
+        print >> sys.stderr, "Searching for RTC timestamp reset signature...."
+        print >> sys.stderr, "********************************************************"
+        net_init()
+
+        candidates = find_open_bss_nets()
+        print >> sys.stderr, "open BSS candidates:", candidates
+        for ssid in candidates:
+            _rtcreset = try_bss_network(ssid, serial_num, rtctimestamp, rtccount)
+            if not _rtcreset:
+                continue
+
+            return _rtcreset
+
+        send('rtcreset_msg')
+        send('freeze 1')
+        print >> sys.stderr, "System has RTCAR problem, and could not find rtcreset signature"
+    finally:
+        send('quit')
 
 def activate (serial_num, uuid):
     """Try to perform activation.
@@ -385,6 +419,7 @@ def activate (serial_num, uuid):
         # we lose. activation failed.
         send('lock')
         send('freeze 1') # a bit of a hack: make sure screen ends up frozen
+        print >> sys.stderr, "Could not activate this XO"
         return None
     finally:
         send('quit')
@@ -396,8 +431,15 @@ def activate (serial_num, uuid):
 def main():
     global bootpath
     # program to find lease and print it to stdout
+    sn = sys.argv[1]
+    uuid = sys.argv[2]
+    rtcstatus = sys.argv[3]
+    rtctimestamp = sys.argv[4]
+    if rtctimestamp is '':
+        rtctimestamp = '00000000T000000Z'
+    rtccount = sys.argv[5]
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 6:
         print >> sys.stderr, "Usage: %s SN UUID" % sys.argv[0]
         sys.exit(1)
 
@@ -412,8 +454,10 @@ def main():
     bootpath = open(bootpath_path).read().rstrip("\n\0")
     if not os.path.exists('/proc/device-tree'):
         check_call(['/bin/umount','/ofw'])
-
-    ret = activate(sys.argv[1], sys.argv[2])
+    if rtcstatus == "residue" or rtcstatus == "rollback":
+        ret = rtcreset(sn, uuid, rtctimestamp, rtccount)
+    else:
+        ret = activate(sn, uuid)
     if ret is not None:
         print ret
         sys.exit(0)

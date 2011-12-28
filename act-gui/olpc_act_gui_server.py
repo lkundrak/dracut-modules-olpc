@@ -88,6 +88,14 @@ def process_command(fb, cmd):
         # registration failed: draw a lock icon on the XO man
         fb.draw(xoff+551, yoff+381, fb['locked XO'])
         fb.draw(xoff+0,   yoff+0, fb['locked message'])
+    elif word[0] == 'rtcreset':
+        active = 'clock'
+        outline = True
+        blink = 'white'
+        xicon += 151
+        fb.draw(xicon - (fb['clock'].width // 2), yicon, fb['clock'])
+    elif word[0] == 'rtcreset_msg':
+        fb.draw(xoff+0, yoff+0, fb['rtcreset message'])
     elif word[0] == 'stolen':
         # registration failed: draw a stolen icon on the XO man
         fb.draw(xoff+551, yoff+381, fb['stolen XO'])
