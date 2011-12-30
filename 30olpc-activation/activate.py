@@ -68,7 +68,7 @@ def set_addresses_bss ():
 
     # We ignore potential DHCP failures because we may be able to continue
     # using IPv6 autoconfig.
-    call(['/usr/bin/busybox','udhcpc','-ni','eth0','-t','4'])
+    call(['/usr/bin/busybox','udhcpc','-ni','eth0','-t','4'], stdout=open('/dev/null', 'w'))
 
     # udhcpc returns after obtaining a lease, but it needs a little extra time
     # before the interface is configured
