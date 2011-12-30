@@ -2,18 +2,18 @@
 # Generate a list of files from the python package that we want in the
 # initramfs
 
-lines=$(rpm -q --filesbypkg python)
+lines=$(rpm -q --filesbypkg python python-libs)
 
 IFS="
 "
 for line in $lines; do
-	file="/${line#python */}"
+	file="/${line#python*/}"
 
 	# directories
 	[ -d "$file" ] && continue
 
 	# documentation
-	[[ $file =~ ^/usr/share/(doc|man) ]] && continue
+	[[ $file =~ ^/usr/share/(doc|man|systemtap) ]] && continue
 
 	# stuff we don't need
 	[[ $file =~ ^/usr/lib/python2\..*/(idlelib|distutils|compiler|email|xml|multiprocessing|json|ctypes|bsddb|hotshot|logging|wsgiref|curses|plat-linux2|sqlite3|unittest|lib2to3)/ ]] && continue
