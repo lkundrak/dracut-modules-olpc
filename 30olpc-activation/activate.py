@@ -266,6 +266,7 @@ def try_to_get_data(family, addr, serial_num, rtctimestamp=None, rtccount=None):
         msg = serial_num
     try:
         s.settimeout(3)
+        print >> sys.stderr, "Trying", addr
         s.connect(addr)
         s.sendall(msg)
         s.shutdown(SHUT_WR)
