@@ -10,8 +10,7 @@ depends() {
 }
 
 install() {
-	dracut_install iwconfig
-	dracut_install iwlist
+	dracut_install iw
 	dracut_install ip
 
 	python_libdir=$(python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")

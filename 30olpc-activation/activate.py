@@ -138,42 +138,28 @@ def sd_get_disk():
     return "/dev/mmcblk0"
 
 def select_mesh_channel (channel):
-    check_call(['/sbin/iwconfig','eth0','mode','ad-hoc','essid','dontcare'])
-    check_call(['/sbin/iwconfig','msh0','channel',str(channel)])
+    check_call(['/sbin/iw','dev','set','type','ibss'])
+    check_call(['/sbin/iw','dev','msh0','set','channel',str(channel)])
     check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
     set_addresses_mesh()
 
 def select_bss (ssid):
     print >> sys.stderr, "attempting connection to open BSS", ssid
     check_call(['/sbin/ip','link','set','dev','eth0','up']) # rely on ipv6 autoconfig
-    check_call(['/sbin/iwconfig','eth0','mode','managed','essid',ssid])
-
+    check_call(['/sbin/iw','dev','eth0','set','type','managed'])
+    call(['/sbin/iw','dev','eth0','connect',ssid])
     # wait for association, max 5 secs
     for i in range(0, 10):
         time.sleep(0.5)
-        output = subprocess.Popen(["/sbin/iwconfig", "eth0"],
+        output = subprocess.Popen(["/sbin/iw", "dev", "eth0", "link"],
                                   stdout=subprocess.PIPE).communicate()[0]
-        lines = output.split("\n")
-        if len(lines) < 2:
-            print >> sys.stderr, "bad iwconfig output?"
-            return False
+        for line in output.split("\n"):
+            line = line.strip()
+            if line.startswith("SSID: " + ssid):
+                print >> sys.stderr, "Connected"
+                return  True
 
-        ssidpos = lines[0].index("ESSID:")
-        iw_ssid = lines[0][ssidpos + 6:].strip()
-        if iw_ssid != '"' + ssid + '"':
-            if iw_ssid != '""':
-                print >> sys.stderr, "unexpected ESSID value:", iw_ssid
-            continue
-
-        appos = lines[1].find("Access Point: ")
-        if appos == -1:
-            continue
-        iw_ap = lines[1][appos+14:].strip()
-        if iw_ap[0].isdigit() or iw_ap[0].upper() in ('A', 'B', 'C', 'D', 'E', 'F'):
-            print >> sys.stderr, "connected!"
-            set_addresses_bss()
-            return True
-
+    print >> sys.stderr, "Connection failed"
     return False
 
 def try_bss_network (ssid, serial_num, rtctimestamp=None, rtccount=None):
@@ -192,29 +178,34 @@ def try_bss_network (ssid, serial_num, rtctimestamp=None, rtccount=None):
         call(['/sbin/ip','link','set','dev','eth0','down'])
 
 def _find_open_bss_nets(iface):
-    output = subprocess.Popen(["/sbin/iwlist", iface, "scan"], stdout=subprocess.PIPE).communicate()[0]
+    output = subprocess.Popen(["/sbin/iw","dev", iface, "scan"], stdout=subprocess.PIPE).communicate()[0]
     nets = []
-    this_essid = ""
-
+    this_ssid = ""
+    use = False
     for line in output.split("\n"):
         line = line.strip()
-
-        if line.startswith("ESSID:\""):
-            this_essid = line[7:-1]
+        if line.startswith("capability:"):
+            if "ESS" in line and not "Privacy" in line:
+                use = True
             continue
 
-        if line.startswith("Mode:"):
-            if line != "Mode:Master" and line != "Mode:Managed":
-                # ignore non-BSS networks
-                this_essid = ""
+        if line.startswith("SSID") and use:
+            this_ssid = line[6:]
             continue
 
-        if line == "Encryption key:off":
-            if len(this_essid) > 0:
-                if this_essid not in nets:
-                    nets.append(this_essid)
-                this_essid = ""
+        if line.startswith("RSN") and use:
+            use = False
+            continue
 
+        if line.startswith('BSS') and use:
+            if this_ssid not in nets:
+                nets.append(this_ssid)
+            use = False
+
+    #last net
+    if use:
+        if this_ssid not in nets:
+            nets.append(this_ssid)
     return nets
 
 def find_open_bss_nets (iface="eth0"):
