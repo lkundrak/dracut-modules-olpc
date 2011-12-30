@@ -46,4 +46,11 @@ install() {
 	dracut_install -o /lib/firmware/sd8686_helper.bin
 
 	inst "$moddir"/filesystems /etc/filesystems
+	inst "$moddir"/udhcpc.script /usr/share/udhcpc/default.script
+
+	for _dir in "$usrlibdir/tls/$_arch" "$usrlibdir/tls" "$usrlibdir/$_arch" \
+		"$usrlibdir" "$libdir"; do
+		[ -e "$_dir"/libnss_dns.so.* ] && dracut_install "$_dir"/libnss_dns.so.*
+	done
+
 }

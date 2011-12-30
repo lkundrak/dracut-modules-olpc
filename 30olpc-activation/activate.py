@@ -5,6 +5,7 @@
 """activate.py contains the laptop activation routines."""
 from __future__ import division, with_statement
 import os, os.path, sys, time
+import ctypes
 from socket import *
 from ipv6util import if_nametoindex
 import subprocess
@@ -64,13 +65,19 @@ def set_addresses_bss ():
     ll = 'fe80::%02x%s:%sff:fe%s:%s%s' % \
          (top, mac[1], mac[2], mac[3], mac[4], mac[5])
     call(['/sbin/ip', 'addr', 'add', '%s/64' % ll, 'dev', 'eth0'])
-    a = 2+(ord(os.urandom(1)[0])%250)
-    call(['/sbin/ip', 'addr', 'add', '172.18.127.%d/19' % a,
-          'brd', '172.18.127.255', 'dev', 'eth0'])
-    # XXX: BSSIDs of all 0, F, or 4 are invalid
-    call(['/sbin/ip', 'route', 'add', 'default', 'via', '172.18.96.1', 'dev', 'eth0'])
-    # should be able to ping 172.18.0.1 after this point.
-    # the IPv4 address is a little hacky, prefer ipv6
+
+    # We ignore potential DHCP failures because we may be able to continue
+    # using IPv6 autoconfig.
+    call(['/usr/bin/busybox','udhcpc','-ni','eth0','-t','4'])
+
+    # udhcpc returns after obtaining a lease, but it needs a little extra time
+    # before the interface is configured
+    time.sleep(2)
+
+    # Force DNS resolver reinit, as resolv.conf may have changed
+    libc = ctypes.CDLL('libc.so.6')
+    res_init = getattr(libc, '__res_init')
+    res_init(None)
 
 def mesh_device_exists ():
     return os.path.exists('/sys/class/net/msh0')
@@ -179,6 +186,9 @@ def try_bss_network (ssid, serial_num, rtctimestamp=None, rtccount=None):
         else:
             return None
     finally:
+        call(["/usr/bin/pkill","-f","udhcpc"])
+        call(["/sbin/ip","route","flush","dev","eth0"])
+        call(["/sbin/ip","addr","flush","dev","eth0"])
         call(['/sbin/ip','link','set','dev','eth0','down'])
 
 def _find_open_bss_nets(iface):
@@ -275,8 +285,8 @@ def contact_server (iface, serial_num, rtctimestamp=None, rtccount=None):
         xs6addr = 'fe80::abcd:ef01'
     else:
         xs6addr = 'fe80::abcd:ef02'
-
-    for family, addr in [ (AF_INET6,(xs6addr,191,
+    for family, addr in [ (AF_INET, ('schoolserver', 191)),
+                          (AF_INET6,(xs6addr,191,
                                      0, if_nametoindex(iface))),
                           (AF_INET, ('172.18.0.1',191)), ] * 4:
         try:

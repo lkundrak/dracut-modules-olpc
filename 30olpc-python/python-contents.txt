@@ -42,6 +42,17 @@
 /usr/lib/python2.7/copy_reg.py
 /usr/lib/python2.7/cProfile.py
 /usr/lib/python2.7/csv.py
+/usr/lib/python2.7/ctypes/_endian.py
+/usr/lib/python2.7/ctypes/__init__.py
+/usr/lib/python2.7/ctypes/macholib/dyld.py
+/usr/lib/python2.7/ctypes/macholib/dylib.py
+/usr/lib/python2.7/ctypes/macholib/fetch_macholib
+/usr/lib/python2.7/ctypes/macholib/framework.py
+/usr/lib/python2.7/ctypes/macholib/__init__.py
+/usr/lib/python2.7/ctypes/macholib/README.ctypes
+/usr/lib/python2.7/ctypes/util.py
+/usr/lib/python2.7/ctypes/util.py.binutils-no-dep
+/usr/lib/python2.7/ctypes/wintypes.py
 /usr/lib/python2.7/dbhash.py
 /usr/lib/python2.7/difflib.py
 /usr/lib/python2.7/dircache.py
@@ -210,6 +221,7 @@
 /usr/lib/python2.7/lib-dynload/cPickle.so
 /usr/lib/python2.7/lib-dynload/cStringIO.so
 /usr/lib/python2.7/lib-dynload/_csv.so
+/usr/lib/python2.7/lib-dynload/_ctypes.so
 /usr/lib/python2.7/lib-dynload/_curses.so
 /usr/lib/python2.7/lib-dynload/datetime.so
 /usr/lib/python2.7/lib-dynload/dlmodule.so
