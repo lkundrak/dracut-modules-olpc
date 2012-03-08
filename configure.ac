@@ -19,7 +19,7 @@ AC_SUBST(PY_CFLAGS)
 AC_SUBST(PY_LDFLAGS)
 AC_SUBST(PY_LIBS)
 
-DRACUT_MODDIR="$datadir/dracut/modules.d"
+DRACUT_MODDIR="$exec_prefix/lib/dracut/modules.d"
 AC_SUBST(DRACUT_MODDIR)
 
 DRACUT_LIBDIR="$libdir/dracut-modules-olpc"
