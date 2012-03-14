@@ -2,7 +2,7 @@
 # partitioned NAND with p1=jffs2 p2=ubifs
 is_ubifs_root() {
 	[ -e /sys/class/mtd/mtd3/name ] || return 1
-	local name=$(cat /sys/class/mtd/mtd3/name)
+	local name=$(cat /sys/class/mtd/mtd2/name)
 	[ "$name" = "system" ]
 }
 
