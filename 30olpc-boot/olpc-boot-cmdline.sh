@@ -1,7 +1,7 @@
 # if we have 2 partitions and the 2nd partition is called 'system', assumed
 # partitioned NAND with p1=jffs2 p2=ubifs
 is_ubifs_root() {
-	[ -e /sys/class/mtd/mtd3/name ] || return 1
+	[ -e /sys/class/mtd/mtd2/name ] || return 1
 	local name=$(cat /sys/class/mtd/mtd2/name)
 	[ "$name" = "system" ]
 }
@@ -38,7 +38,7 @@ if [ -z "$root" ]; then
 		/pci/nandflash@c:*)
 			# XO-1 internal NAND
 			if is_ubifs_root; then
-				ubiattach /dev/ubi_ctrl -m 3 -d 0 &
+				ubiattach /dev/ubi_ctrl -m 2 -d 0 &
 				root=/dev/ubi0_0
 				fstype=ubifs
 			else
