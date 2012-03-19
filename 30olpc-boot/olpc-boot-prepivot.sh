@@ -273,7 +273,11 @@ ensure_dev() {
 }
 
 start_bootanim() {
-	[ -x "$1/usr/sbin/boot-anim-start" ] || return
+	[ -x "$1/usr/sbin/plymouthd" ] || return
+
+	# Only enable graphical boot if DCON is frozen at this point
+	local dcon_state=$(cat /sys/devices/platform/dcon/freeze)
+	[ "$dcon_state" = "1" ] || return
 
 	mount -t proc proc "$1"/proc
 	mount -t sysfs syfs "$1"/sys
@@ -290,7 +294,14 @@ start_bootanim() {
 	ensure_dev "$1" console c 5 1
 	ensure_dev "$1" tty1 c 4 1
 	ensure_dev "$1" tty2 c 4 2
-	chroot "$1" /usr/sbin/boot-anim-start
+	ensure_dev "$1" ptmx c 5 2
+
+	export FRAMEBUFFER=/dev/fb0
+	mkdir -p -m 0755 "$1"/run/plymouth
+	chroot "$1" /sbin/plymouthd --kernel-command-line="rhgb" --pid-file /run/plymouth/pid
+	chroot "$1" /bin/plymouth show-splash
+	echo 0 > /sys/devices/platform/dcon/freeze
+
 	umount "$1"/proc
 	umount "$1"/sys
 	umount "$1"/dev
