@@ -57,6 +57,8 @@ get_boot_fstype() {
 }
 
 mount_boot() {
+	is_partitioned || return 0
+
 	local bdev=$(get_boot_device)
 	[ $? != 0 ] && return 1
 
@@ -307,6 +309,35 @@ start_bootanim() {
 	umount "$1"/dev
 }
 
+should_resize_system() {
+	is_partitioned || return 1
+	[ -e "/bootpart/security/no-resize" ] && return 1
+
+	local root_dev=${root#block:}
+	local sys_part=$(basename $(readlink -f $root_dev))
+	local sys_disk=${sys_part%p?}
+
+	[ "${sys_disk:0:3}" = "mmc" ] || return 1
+
+	local disk_size=$(cat /sys/class/block/$sys_disk/size)
+	local part_size=$(cat /sys/class/block/$sys_part/size)
+	local part_start=$(cat /sys/class/block/$sys_part/start)
+	local part_end=$(( part_start + part_size ))
+
+	[ "$part_end" = "$disk_size" ] && return 1
+	return 0
+}
+
+resize_system()
+{
+	local sys_disk=${root#block:}
+	sys_disk=${sys_disk%p?}
+	local strlen=${#root}
+	local offset=$(( strlen - 1 ))
+	local partnum=${root:$offset}
+	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk >/dev/null
+}
+
 # XXX mount gives a warning if there's no fstab
 echo "" >> /etc/fstab
 
@@ -316,12 +347,19 @@ echo "" >> /etc/fstab
 mount -o remount,rw "$NEWROOT" || die
 
 # we also need the boot partition available
-if is_partitioned; then
-	mount_boot || die
-fi
+mount_boot
 
 # check private security dir
 check_stolen
+
+# should we resize the system partition?
+if should_resize_system; then
+	unmount_boot
+	umount "$NEWROOT"
+	resize_system
+	mount -t "$fstype" "${root#block:}" "$NEWROOT" || die
+	mount_boot
+fi
 
 # if we're activating, we just received a lease that we should write to disk
 # sooner rather than later
