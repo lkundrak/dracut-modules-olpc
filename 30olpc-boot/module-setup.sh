@@ -25,6 +25,7 @@ install() {
 	done
 
 	dracut_install ubiattach
+	dracut_install sfdisk
 
 	# mount points used by initramfs code
 	mkdir -p "$initdir"/ofw
