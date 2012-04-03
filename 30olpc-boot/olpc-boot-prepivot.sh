@@ -336,6 +336,10 @@ resize_system()
 	local offset=$(( strlen - 1 ))
 	local partnum=${root:$offset}
 	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk >/dev/null
+
+	# Partition nodes are removed and recreated now - wait for udev to finish
+	# recreating them before trying to re-mount the disk.
+	udevadm settle
 }
 
 # XXX mount gives a warning if there's no fstab
