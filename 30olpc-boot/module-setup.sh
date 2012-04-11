@@ -38,4 +38,7 @@ install() {
 	# http://dev.laptop.org/ticket/10394
 	mkdir -p ${initdir}/etc
 	echo " rd_NO_FSTAB fastboot" >> ${initdir}/etc/cmdline
+
+	# Make "mount -t auto" behaviour the same as it would be on the real system
+	inst /etc/filesystems
 }

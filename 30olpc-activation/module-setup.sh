@@ -44,7 +44,6 @@ install() {
 	dracut_install -o /lib/firmware/sd8686.bin
 	dracut_install -o /lib/firmware/sd8686_helper.bin
 
-	inst "$moddir"/filesystems /etc/filesystems
 	inst "$moddir"/udhcpc.script /usr/share/udhcpc/default.script
 
 	for _dir in "$usrlibdir/tls/$_arch" "$usrlibdir/tls" "$usrlibdir/$_arch" \
