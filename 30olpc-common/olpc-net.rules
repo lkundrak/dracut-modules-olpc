@@ -4,9 +4,14 @@
 #
 # Note that this file needs to present in both olpc-utils and the initramfs.
 
-# XO-1: the rule is ugly because libertas is not exposed in the device tree?
-SUBSYSTEM=="net", KERNEL=="wlan*", SUBSYSTEMS=="usb", ATTRS{product}=="MARVELL Wireless Device", NAME="eth0"
+SUBSYSTEM!="net", GOTO="olpc_net_end"
+ACTION!="add", GOTO="olpc_net_end"
 
-# XO-1.5
-SUBSYSTEM=="net", KERNEL=="wlan*", DRIVERS=="libertas_sdio", NAME="eth0"
+# Internal libertas hardware: fix to eth0
+KERNEL=="wlan*", DRIVERS=="libertas_sdio", NAME="eth0"
+KERNEL=="wlan*", DRIVERS=="usb8xxx", NAME="eth0"
 
+# other adapters named eth0: find a new name
+KERNEL=="eth0", PROGRAM="olpc_eth_namer", NAME="%c"
+
+LABEL="olpc_net_end"
