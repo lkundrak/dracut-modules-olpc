@@ -345,9 +345,9 @@ resize_system()
 # XXX mount gives a warning if there's no fstab
 echo "" >> /etc/fstab
 
-# make writable, since some of our stuff needs it
-# XXX ask dracut to mount rw to begin with?
-# no big deal, remounting is dead quick
+# Dracut lands us here with $NEWROOT as read-only.
+# XXX Here we should run fsck and update the boot anim accordingly, etc.
+# Now make writable, since some of our stuff needs it
 mount -o remount,rw "$NEWROOT" || die
 
 # we also need the boot partition available
@@ -437,17 +437,5 @@ fi
 
 is_partitioned && unmount_boot
 
-# distro init scripts expect ro root, they will remount it read-write early on.
-# if booting non-partitioned, only remount the VFS-level mount as read-only.
-# this allows the other bind mounts (such as /security) to remain mounted RW.
-# /security must be RW during boot for rwtab to take effect.
-# see http://karelzak.blogspot.com/2011/04/bind-mounts-mtab-and-read-only.html
-if is_partitioned; then
-	mount -o remount,ro "$NEWROOT"
-else
-	mount -o remount,ro,bind "$NEWROOT"
-fi
-
 unset check_stolen ensure_dev start_bootanim
 unset die
-
