@@ -44,6 +44,7 @@ if [ -z "$root" ]; then
 			else
 				root="mtd0"
 				fstype="jffs2"
+				rflags="rp_size=4096"
 			fi
 			;;
 		/pci/usb@*) root="/dev/sda2" ;; # external USB, assume partitioned
