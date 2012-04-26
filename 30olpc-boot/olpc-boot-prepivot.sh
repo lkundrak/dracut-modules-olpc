@@ -310,21 +310,33 @@ start_bootanim() {
 }
 
 should_resize_system() {
-	is_partitioned || return 1
-	[ -e "/bootpart/security/no-resize" ] && return 1
+	if ! is_partitioned; then
+		echo "System isn't partitioned, won't resize" > /dev/kmsg
+		return 1
+	fi
+	if [ -e "/bootpart/security/no-resize" ]; then
+		echo "Won't resize, no-resize flag exists" > /dev/kmsg
+		return 1
+	fi
 
 	local root_dev=${root#block:}
 	local sys_part=$(basename $(readlink -f $root_dev))
 	local sys_disk=${sys_part%p?}
 
-	[ "${sys_disk:0:3}" = "mmc" ] || return 1
+	if ! [ "${sys_disk:0:3}" = "mmc" ]; then
+		echo "Won't resize, disk ${sys_disk} not mmc" > /dev/kmsg
+		return 1
+	fi
 
 	local disk_size=$(cat /sys/class/block/$sys_disk/size)
 	local part_size=$(cat /sys/class/block/$sys_part/size)
 	local part_start=$(cat /sys/class/block/$sys_part/start)
 	local part_end=$(( part_start + part_size ))
 
+	echo "Dsize $disk_size Psize $part_size Pstart $part_start Pend $part_end" > /dev/kmsg
+
 	[ "$part_end" = "$disk_size" ] && return 1
+	echo "Disk should be resized." > /dev/kmsg
 	return 0
 }
 
@@ -335,7 +347,9 @@ resize_system()
 	local strlen=${#root}
 	local offset=$(( strlen - 1 ))
 	local partnum=${root:$offset}
-	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk >/dev/null
+	echo "Try resize: sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk" > /dev/kmsg
+	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk >/dev/kmsg
+	echo "sfdisk returned $?" > /dev/kmsg
 
 	# Partition nodes are removed and recreated now - wait for udev to finish
 	# recreating them before trying to re-mount the disk.
@@ -358,6 +372,7 @@ check_stolen
 
 # should we resize the system partition?
 if should_resize_system; then
+	echo "Will attempt resize" > /dev/kmsg
 	unmount_boot
 	umount "$NEWROOT"
 	resize_system
