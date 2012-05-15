@@ -348,7 +348,7 @@ resize_system()
 	local offset=$(( strlen - 1 ))
 	local partnum=${root:$offset}
 	echo "Try resize: sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk" > /dev/kmsg
-	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk >/dev/kmsg
+	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk &>/dev/kmsg
 	echo "sfdisk returned $?" > /dev/kmsg
 
 	# Partition nodes are removed and recreated now - wait for udev to finish
