@@ -68,7 +68,7 @@ def set_addresses_bss ():
 
     # We ignore potential DHCP failures because we may be able to continue
     # using IPv6 autoconfig.
-    call(['/usr/bin/busybox','udhcpc','-ni','eth0','-t','4'], stdout=open('/dev/null', 'w'))
+    call(['/usr/bin/busybox','udhcpc','-ni','eth0','-t','4'], stdout=open('/dev/stderr', 'w'))
 
     # udhcpc returns after obtaining a lease, but it needs a little extra time
     # before the interface is configured
@@ -157,7 +157,8 @@ def select_bss (ssid):
             line = line.strip()
             if line.startswith("SSID: " + ssid):
                 print >> sys.stderr, "Connected"
-                return  True
+                set_addresses_bss()
+                return True
 
     print >> sys.stderr, "Connection failed"
     return False
