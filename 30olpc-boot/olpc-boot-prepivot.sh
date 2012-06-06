@@ -347,6 +347,11 @@ resize_system()
 	local strlen=${#root}
 	local offset=$(( strlen - 1 ))
 	local partnum=${root:$offset}
+
+	# udev might still be busy probing the disk, meaning that it will be in
+	# use. Give it a chance to finish first.
+	udevadm settle
+
 	echo "Try resize: sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk" > /dev/kmsg
 	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk &>/dev/kmsg
 	echo "sfdisk returned $?" > /dev/kmsg
