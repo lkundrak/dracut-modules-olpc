@@ -44,6 +44,10 @@ install() {
 	dracut_install -o /lib/firmware/sd8686.bin
 	dracut_install -o /lib/firmware/sd8686_helper.bin
 
+	# instmods above automatically installed some alternative firmware that we
+	# don't want
+	rm -rf "$initdir"/lib/firmware/libertas
+
 	inst "$moddir"/udhcpc.script /usr/share/udhcpc/default.script
 
 	for _dir in "$usrlibdir/tls/$_arch" "$usrlibdir/tls" "$usrlibdir/$_arch" \
