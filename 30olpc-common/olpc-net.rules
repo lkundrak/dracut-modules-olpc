@@ -11,7 +11,7 @@ ACTION!="add", GOTO="olpc_net_end"
 
 # Internal libertas hardware: fix to eth0
 DRIVERS=="libertas_sdio", NAME="eth0", GOTO="olpc_net_end"
-DRIVERS=="usb8xxx", NAME="eth0", GOTO="olpc_net_end"
+DRIVERS=="usb8xxx", KERNEL!="msh*", NAME="eth0", GOTO="olpc_net_end"
 
 # other adapters named eth0: find a new name
 KERNEL=="eth0", PROGRAM="olpc_eth_namer", NAME="%c"
