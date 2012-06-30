@@ -1,4 +1,4 @@
-AC_INIT([dracut-modules-olpc], [0.6.10])
+AC_INIT([dracut-modules-olpc], [0.6.11])
 
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([30olpc-boot/olpc-boot-premount.sh])
