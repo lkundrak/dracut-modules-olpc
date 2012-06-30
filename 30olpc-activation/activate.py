@@ -138,7 +138,6 @@ def sd_get_disk():
     return "/dev/mmcblk0"
 
 def select_mesh_channel (channel):
-    check_call(['/sbin/iw','dev','set','type','ibss'])
     check_call(['/sbin/iw','dev','msh0','set','channel',str(channel)])
     check_call(['/sbin/ip','link','set','dev','msh0','up']) # rely on ipv6 autoconfig
     set_addresses_mesh()
