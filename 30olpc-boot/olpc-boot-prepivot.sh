@@ -300,7 +300,7 @@ start_bootanim() {
 
 	export FRAMEBUFFER=/dev/fb0
 	mkdir -p -m 0755 "$1"/run/plymouth
-	chroot "$1" /sbin/plymouthd --kernel-command-line="rhgb" --pid-file /run/plymouth/pid
+	chroot "$1" /sbin/plymouthd --kernel-command-line="rhgb plymouth.ignore-serial-consoles" --pid-file /run/plymouth/pid
 	chroot "$1" /bin/plymouth show-splash
 	echo 0 > /sys/devices/platform/dcon/freeze
 
