@@ -20,6 +20,14 @@ if [ -z "$root" ]; then
 	# XXX: unpartitioned USB not supported
 	# XXX: might get confused if more than 1 USB disk is plugged in
 	case $bootpath in
+		/sd/sdhci@d4280000/disk:*) # device tree
+			# FIXME: XO-4 ext SD, might break for XO-1.75
+			root="/dev/disk/mmc/mmc2p2"
+			;;
+		/sd/sdhci@d4281000/disk:*) # device tree
+			# FIXME: XO-4 eMMC, might break for XO-1.75
+			root="/dev/disk/mmc/mmc1p2"
+			;;
 		/sd@d4280000/disk@?:*) # XO-1.75
 			# extract the bus number (from disk@NUM) and decrement by 1 to
 			# correlate with linux device
