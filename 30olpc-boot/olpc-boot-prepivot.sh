@@ -455,7 +455,7 @@ if [ -n "$current" ]; then
 	umount $oldroot || die
 fi
 
-is_partitioned && unmount_boot
+is_partitioned && mount --move /bootpart "$NEWROOT/bootpart"
 
 unset check_stolen ensure_dev start_bootanim
 unset die
