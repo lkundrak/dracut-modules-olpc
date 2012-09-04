@@ -10,6 +10,7 @@ SUBSYSTEM!="net", GOTO="olpc_net_end"
 ACTION!="add", GOTO="olpc_net_end"
 
 # Internal libertas hardware: fix to eth0
+DRIVERS=="mwifiex_sdio", KERNEL=="mlan*", NAME="eth0", GOTO="olpc_net_end"
 DRIVERS=="libertas_sdio", NAME="eth0", GOTO="olpc_net_end"
 DRIVERS=="usb8xxx", KERNEL!="msh*", NAME="eth0", GOTO="olpc_net_end"
 
