@@ -16,14 +16,6 @@ install() {
 	inst_hook pre-mount 10 "$moddir"/olpc-boot-premount.sh
 	inst_hook pre-pivot 10 "$moddir"/olpc-boot-prepivot.sh
 
-	progs="dd rm mv ln sync sleep poweroff umount readlink dirname basename mktemp"
-
-	for i in $progs; do
-			path=$(find_binary "$i")
-			[ -e "$initdir/$path" ] && continue
-			ln -s /sbin/busybox "$initdir/$path"
-	done
-
 	dracut_install ubiattach
 	dracut_install sfdisk
 
