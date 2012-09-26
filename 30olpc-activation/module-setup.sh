@@ -40,13 +40,21 @@ install() {
 	dracut_install "$python_libdir"/bitfrost/util/pyverify.so
 
 	instmods vfat usb_storage usb8xxx libertas libertas_sdio ohci_hcd ehci_hcd sdhci sd
-	dracut_install -o /lib/firmware/usb8388.bin
-	dracut_install -o /lib/firmware/sd8686.bin
-	dracut_install -o /lib/firmware/sd8686_helper.bin
-
-	# instmods above automatically installed some alternative firmware that we
-	# don't want
+	# instmods installs all libertas firmware, but we have our own logic
+	# to decide which libertas firmware to include.
 	rm -rf "$initdir"/lib/firmware/libertas
+
+	if [ -z "$OLPC_WIFI_FW_SELECT" ]; then
+		OLPC_WIFI_FW_8388=1
+		OLPC_WIFI_FW_8686=1
+	fi
+
+	[ -n "$OLPC_WIFI_FW_8388" ] && lbs_fw+=" libertas/usb8388_olpc.bin"
+	[ -n "$OLPC_WIFI_FW_8686" ] && lbs_fw+=" libertas/sd8686_v9.bin libertas/sd8686_v9_helper.bin"
+
+	for fw in $lbs_fw; do
+		dracut_install -o /lib/firmware/${fw}
+	done
 
 	inst "$moddir"/udhcpc.script /usr/share/udhcpc/default.script
 
