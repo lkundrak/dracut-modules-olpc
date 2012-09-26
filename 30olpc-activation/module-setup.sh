@@ -47,10 +47,12 @@ install() {
 	if [ -z "$OLPC_WIFI_FW_SELECT" ]; then
 		OLPC_WIFI_FW_8388=1
 		OLPC_WIFI_FW_8686=1
+		OLPC_WIFI_FW_8787=1
 	fi
 
 	[ -n "$OLPC_WIFI_FW_8388" ] && lbs_fw+=" libertas/usb8388_olpc.bin"
 	[ -n "$OLPC_WIFI_FW_8686" ] && lbs_fw+=" libertas/sd8686_v9.bin libertas/sd8686_v9_helper.bin"
+	[ -n "$OLPC_WIFI_FW_8787" ] && lbs_fw+=" mrvl/sd8787_uapsta.bin"
 
 	for fw in $lbs_fw; do
 		dracut_install -o /lib/firmware/${fw}
