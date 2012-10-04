@@ -26,11 +26,6 @@ install() {
 
 	inst /usr/lib/dracut-modules-olpc/cprl /usr/libexec/initramfs-olpc/cprl
 
-	# Disable dracut's fstab-checking, not appropriate for us
-	# http://dev.laptop.org/ticket/10394
-	mkdir -p ${initdir}/etc
-	echo " rd_NO_FSTAB fastboot" >> ${initdir}/etc/cmdline
-
 	# Make "mount -t auto" behaviour the same as it would be on the real system
 	inst /etc/filesystems
 }
