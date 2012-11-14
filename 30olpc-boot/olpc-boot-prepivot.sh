@@ -353,7 +353,7 @@ resize_system()
 	udevadm settle
 
 	echo "Try resize: sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk" > /dev/kmsg
-	echo ",+,," | sfdisk -N$partnum -uS -S 32 -H 32 $sys_disk &>/dev/kmsg
+	echo ",+,," | sfdisk --no-reread -N$partnum -uS -S 32 -H 32 $sys_disk &>/dev/kmsg
 	echo "sfdisk returned $?" > /dev/kmsg
 
 	# Partition nodes are removed and recreated now - wait for udev to finish
