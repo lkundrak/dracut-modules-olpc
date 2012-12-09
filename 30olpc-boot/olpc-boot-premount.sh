@@ -72,7 +72,14 @@ echo "$sn/$uuid" > /dev/urandom || die
 [ -e /dev/hwrng ] && dd if=/dev/hwrng of=/dev/urandom bs=1k count=1 >/dev/null 2>&1
 
 # check for activation code, perform activation if necessary
-[ -e "/usr/libexec/initramfs-olpc/activate.py" ] && do_activate=1
+
+# in theory, bootpath should have the name of the *kernel* booted which would
+# be actos.  But some old firmwares inadvertently pass the ramdisk name instead
+# (actrd). Look for \actos and \actrd in the bootpath.
+case $bootpath in
+	*\\actos*|*actrd*) do_activate=1 ;;
+esac
+
 [ "$xo" = "0" -o "$ak" = "1" ] && do_activate=0
 
 if [ "$do_activate" = "1" ]; then
