@@ -39,10 +39,12 @@ install() {
 	dracut_install "$python_libdir"/bitfrost/util/json.py
 	dracut_install "$python_libdir"/bitfrost/util/pyverify.so
 
-	instmods vfat usb_storage usb8xxx libertas libertas_sdio ohci_hcd ehci_hcd sdhci sd
-	# instmods installs all libertas firmware, but we have our own logic
-	# to decide which libertas firmware to include.
-	rm -rf "$initdir"/lib/firmware/libertas
+	instmods vfat usb_storage
+	instmods usb8xxx libertas libertas_sdio mwifiex mwifiex_sdio
+	instmods ohci_hcd ehci_hcd sdhci sd
+	# instmods installs all Marvell firmware, but we have our own logic
+	# to decide which firmware to include.
+	rm -rf "$initdir"/lib/firmware/{libertas,mrvl}
 
 	if [ -z "$OLPC_WIFI_FW_SELECT" ]; then
 		OLPC_WIFI_FW_8388=1
