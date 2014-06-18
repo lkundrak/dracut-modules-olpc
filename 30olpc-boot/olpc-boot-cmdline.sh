@@ -56,6 +56,12 @@ if [ -z "$root" ]; then
 			tmp=$((tmp - 1))
 			root="/dev/disk/mmc/mmc${tmp}p2"
 			;;
+		/pci/sd@c,1/disk@?:*) # XO-1 SD card
+			tmp=${bootpath#/pci/sd@c,1/disk@}
+			tmp=${tmp%%:*}
+			tmp=$((tmp - 1))
+			root="/dev/disk/mmc/mmc${tmp}p2"
+			;;
 		/pci/nandflash@c:*)
 			# XO-1 internal NAND
 			if is_ubifs_root; then
