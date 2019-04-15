@@ -11,7 +11,11 @@ depends() {
 install() {
 	# cmdline hook must be installed to run after 10parse-root-opts but before
 	# 95parse-block
-	inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline.sh
+	if [[ $kernel == [34]* || "$(uname -m)" != arm* ]]; then
+		inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline.sh
+	else
+		inst_hook cmdline 20 "$moddir"/olpc-boot-cmdline-dt.sh
+	fi
 
 	inst_hook pre-mount 10 "$moddir"/olpc-boot-premount.sh
 	inst_hook pre-pivot 10 "$moddir"/olpc-boot-prepivot.sh
